@@ -1,42 +1,30 @@
 import { TimeUtils } from './time.utils';
+import { SectionPosition, SectionSelection } from '../models/settings.model';
 
 /**
  * Utilities for Markdown-specific operations
  */
 export class MarkdownUtils {
 	/**
-	 * Find the first heading of specified level
+	 * Find a heading of specified level
 	 * @param lines File lines
 	 * @param headingLevel The heading level to search for (e.g., '##')
+	 * @param findLast Whether to find the last occurrence (true) or first (false)
 	 * @returns The line index of the heading, or -1 if not found
 	 */
-	static findFirstHeading(lines: string[], headingLevel: string): number {
+	static findHeading(lines: string[], headingLevel: string, findLast = false): number {
+		let result = -1;
 		for (let i = 0; i < lines.length; i++) {
 			if (lines[i].startsWith(`${headingLevel} `)) {
-				return i;
+				if (!findLast) return i;
+				result = i;
 			}
 		}
-		return -1;
+		return result;
 	}
 
 	/**
-	 * Find the last heading of specified level
-	 * @param lines File lines
-	 * @param headingLevel The heading level to search for (e.g., '##')
-	 * @returns The line index of the heading, or -1 if not found
-	 */
-	static findLastHeading(lines: string[], headingLevel: string): number {
-		let lastIndex = -1;
-		for (let i = 0; i < lines.length; i++) {
-			if (lines[i].startsWith(`${headingLevel} `)) {
-				lastIndex = i;
-			}
-		}
-		return lastIndex;
-	}
-
-	/**
-	 * Find the end of a section (right before the next heading of any level)
+	 * Find the section end (right before the next heading of any level)
 	 * @param lines File lines
 	 * @param startLine The line to start searching from
 	 * @returns The line index of the end of the section
@@ -51,114 +39,100 @@ export class MarkdownUtils {
 	}
 
 	/**
-	 * Find the insertion point at the start of a section
+	 * Find the insertion point within a section
 	 * @param lines File lines
 	 * @param sectionStart The starting line of the section
+	 * @param position Whether to insert at the start or end of the section
 	 * @returns The line to insert at
 	 */
-	static findSectionStartInsertPoint(lines: string[], sectionStart: number): number {
-		// Start from line after heading
-		let insertPoint = sectionStart + 1;
+	static findSectionInsertPoint(lines: string[], sectionStart: number, position: SectionPosition): number {
 		const sectionEnd = this.findSectionEnd(lines, sectionStart);
 
-		// Skip any blank lines after the heading
-		while (insertPoint <= sectionEnd && lines[insertPoint].trim() === '') {
-			insertPoint++;
-		}
+		if (position === 'start') {
+			// Start from line after heading
+			let insertPoint = sectionStart + 1;
 
-		// If we've reached the end of the section or file (all blank lines),
-		// insert at the first blank line after header
-		if (insertPoint > sectionEnd || insertPoint >= lines.length) {
-			return sectionStart + 1;
-		}
-
-		// Insert before the first non-blank line
-		return insertPoint;
-	}
-
-	/**
-	 * Find the insertion point at the end of a section
-	 * @param lines File lines
-	 * @param sectionStart The starting line of the section
-	 * @param sectionEnd The ending line of the section
-	 * @returns The line to insert at
-	 */
-	static findSectionEndInsertPoint(lines: string[], sectionStart: number, sectionEnd: number): number {
-		// Find the last non-empty line in the section
-		let lastNonEmptyLine = sectionStart;
-
-		for (let i = sectionStart + 1; i <= sectionEnd; i++) {
-			if (lines[i].trim() !== '') {
-				lastNonEmptyLine = i;
+			// Skip any blank lines after the heading
+			while (insertPoint <= sectionEnd && lines[insertPoint].trim() === '') {
+				insertPoint++;
 			}
-		}
 
-		// Insert after the last non-empty line
-		return lastNonEmptyLine + 1;
-	}
+			// If we've reached the end of the section or file (all blank lines),
+			// insert at the first blank line after header
+			if (insertPoint > sectionEnd || insertPoint >= lines.length) {
+				return sectionStart + 1;
+			}
 
-	/**
-	 * Find insertion point at the start of a file, preserving frontmatter
-	 * @param lines File lines
-	 * @returns The line to insert at
-	 */
-	static findStartOfFileInsertPoint(lines: string[]): number {
-		// Handle empty file
-		if (lines.length === 0) {
-			return 0;
-		}
+			// Insert before the first non-blank line
+			return insertPoint;
+		} else {
+			// Find the last non-empty line in the section
+			let lastNonEmptyLine = sectionStart;
 
-		// Skip YAML frontmatter if present
-		let position = 0;
-		if (lines[0] === '---') {
-			for (let i = 1; i < lines.length; i++) {
-				if (lines[i] === '---') {
-					position = i + 1;
-					break;
+			for (let i = sectionStart + 1; i <= sectionEnd; i++) {
+				if (lines[i].trim() !== '') {
+					lastNonEmptyLine = i;
 				}
 			}
-		}
 
-		// Find the first non-empty line after frontmatter
-		let firstContentLine = position;
-		while (firstContentLine < lines.length && lines[firstContentLine].trim() === '') {
-			firstContentLine++;
+			// Insert after the last non-empty line
+			return lastNonEmptyLine + 1;
 		}
-
-		// If we reached the end, insert at position
-		if (firstContentLine >= lines.length) {
-			return position;
-		}
-
-		return firstContentLine;
 	}
 
 	/**
-	 * Find insertion point at the end of a file
+	 * Find insertion point at the start or end of a file, preserving frontmatter
 	 * @param lines File lines
+	 * @param position Whether to insert at the start or end of the file
 	 * @returns The line to insert at
 	 */
-	static findEndOfFileInsertPoint(lines: string[]): number {
+	static findFileInsertPoint(lines: string[], position: SectionPosition): number {
 		// Handle empty file
 		if (lines.length === 0) {
 			return 0;
 		}
 
-		// Find the last non-empty line
-		let lastNonEmptyLine = -1;
-		for (let i = 0; i < lines.length; i++) {
-			if (lines[i].trim() !== '') {
-				lastNonEmptyLine = i;
+		if (position === 'start') {
+			// Skip YAML frontmatter if present
+			let startPos = 0;
+			if (lines[0] === '---') {
+				for (let i = 1; i < lines.length; i++) {
+					if (lines[i] === '---') {
+						startPos = i + 1;
+						break;
+					}
+				}
 			}
-		}
 
-		// If no content, insert at start
-		if (lastNonEmptyLine === -1) {
-			return 0;
-		}
+			// Find the first non-empty line after frontmatter
+			let firstContentLine = startPos;
+			while (firstContentLine < lines.length && lines[firstContentLine].trim() === '') {
+				firstContentLine++;
+			}
 
-		// Insert after the last non-empty line
-		return lastNonEmptyLine + 1;
+			// If we reached the end, insert at position
+			if (firstContentLine >= lines.length) {
+				return startPos;
+			}
+
+			return firstContentLine;
+		} else {
+			// Find the last non-empty line
+			let lastNonEmptyLine = -1;
+			for (let i = 0; i < lines.length; i++) {
+				if (lines[i].trim() !== '') {
+					lastNonEmptyLine = i;
+				}
+			}
+
+			// If no content, insert at start
+			if (lastNonEmptyLine === -1) {
+				return 0;
+			}
+
+			// Insert after the last non-empty line
+			return lastNonEmptyLine + 1;
+		}
 	}
 
 	/**
@@ -171,8 +145,8 @@ export class MarkdownUtils {
 	 */
 	static findInsertionPoint(
 		lines: string[],
-		sectionSelection: 'first-heading' | 'last-heading' | 'file',
-		sectionPosition: 'start' | 'end',
+		sectionSelection: SectionSelection,
+		sectionPosition: SectionPosition,
 		headingLevel: string = '##',
 	): number {
 		// Handle empty file case
@@ -180,59 +154,22 @@ export class MarkdownUtils {
 			return 0;
 		}
 
-		switch (sectionSelection) {
-			case 'file':
-				if (sectionPosition === 'start') {
-					return this.findStartOfFileInsertPoint(lines);
-				} else {
-					return this.findEndOfFileInsertPoint(lines);
-				}
-
-			case 'first-heading': {
-				const headingLine = this.findFirstHeading(lines, headingLevel);
-
-				// If no heading found, fall back to file
-				if (headingLine === -1) {
-					if (sectionPosition === 'start') {
-						return this.findStartOfFileInsertPoint(lines);
-					} else {
-						return this.findEndOfFileInsertPoint(lines);
-					}
-				}
-
-				const sectionEnd = this.findSectionEnd(lines, headingLine);
-
-				if (sectionPosition === 'start') {
-					return this.findSectionStartInsertPoint(lines, headingLine);
-				} else {
-					return this.findSectionEndInsertPoint(lines, headingLine, sectionEnd);
-				}
-			}
-
-			case 'last-heading': {
-				const headingLine = this.findLastHeading(lines, headingLevel);
-
-				// If no heading found, fall back to file
-				if (headingLine === -1) {
-					if (sectionPosition === 'start') {
-						return this.findStartOfFileInsertPoint(lines);
-					} else {
-						return this.findEndOfFileInsertPoint(lines);
-					}
-				}
-
-				const sectionEnd = this.findSectionEnd(lines, headingLine);
-
-				if (sectionPosition === 'start') {
-					return this.findSectionStartInsertPoint(lines, headingLine);
-				} else {
-					return this.findSectionEndInsertPoint(lines, headingLine, sectionEnd);
-				}
-			}
-
-			default:
-				return 0;
+		// Handle file selection
+		if (sectionSelection === 'file') {
+			return this.findFileInsertPoint(lines, sectionPosition);
 		}
+
+		// Find the heading
+		const findLast = sectionSelection === 'last-heading';
+		const headingLine = this.findHeading(lines, headingLevel, findLast);
+
+		// If no heading found, fall back to file
+		if (headingLine === -1) {
+			return this.findFileInsertPoint(lines, sectionPosition);
+		}
+
+		// Find insert point within section
+		return this.findSectionInsertPoint(lines, headingLine, sectionPosition);
 	}
 
 	/**

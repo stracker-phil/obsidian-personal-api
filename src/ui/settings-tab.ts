@@ -10,6 +10,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 	private settingsService: SettingsService;
 	private loggingService: LoggingService;
 	private headingLevelSetting: Setting | null = null;
+	private positionSetting: Setting | null = null;
 
 	constructor(
 		app: App,
@@ -63,29 +64,29 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		statusEl.style.marginTop = '10px';
 
 		containerEl.createEl('h2', { text: 'Log Entry Formats' });
-        
-        // Add format variables documentation
-        const formatDocsEl = containerEl.createEl('div', { cls: 'format-variables-docs' });
-        formatDocsEl.createEl('p', { 
-            text: 'Available variables for log entry formats:',
-            cls: 'format-docs-title'
-        });
-        
-        const variablesList = formatDocsEl.createEl('ul', { cls: 'format-variables-list' });
-        variablesList.createEl('li', { 
-            text: '{entry} - The actual log entry text (required)'
-        });
-        variablesList.createEl('li', { 
-            text: '{currentTime} - Current time in 24-hour format (HH:MM)'
-        });
-        variablesList.createEl('li', { 
-            text: '{lastEntryTime} - Time of the last log entry in 24-hour format (HH:MM)'
-        });
-        
-        formatDocsEl.style.backgroundColor = '#f5f5f5';
-        formatDocsEl.style.padding = '10px';
-        formatDocsEl.style.borderRadius = '5px';
-        formatDocsEl.style.marginBottom = '15px';
+
+		// Add format variables documentation
+		const formatDocsEl = containerEl.createEl('div', { cls: 'format-variables-docs' });
+		formatDocsEl.createEl('p', {
+			text: 'Available variables for log entry formats:',
+			cls: 'format-docs-title',
+		});
+
+		const variablesList = formatDocsEl.createEl('ul', { cls: 'format-variables-list' });
+		variablesList.createEl('li', {
+			text: '{entry} - The actual log entry text (required)',
+		});
+		variablesList.createEl('li', {
+			text: '{currentTime} - Current time in 24-hour format (HH:MM)',
+		});
+		variablesList.createEl('li', {
+			text: '{lastEntryTime} - Time of the last log entry in 24-hour format (HH:MM)',
+		});
+
+		formatDocsEl.style.backgroundColor = '#f5f5f5';
+		formatDocsEl.style.padding = '10px';
+		formatDocsEl.style.borderRadius = '5px';
+		formatDocsEl.style.marginBottom = '15px';
 
 		new Setting(containerEl)
 			.setName('API Entry Format')
@@ -96,8 +97,8 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 					await this.settingsService.updateSettings({ logEntryFormat: value });
 					this.loggingService.updateOptions({ format: value });
 				}));
-        
-        new Setting(containerEl)
+
+		new Setting(containerEl)
 			.setName('Manual Entry Format')
 			.setDesc('Format for log entries added manually via Obsidian.')
 			.addText(text => text
@@ -123,7 +124,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 					this.loggingService.updateOptions({ sectionSelection: value });
 
 					// Dynamically show/hide heading level setting
-					this.updateHeadingLevelVisibility(value);
+					this.updateSettingsUi(value);
 				}));
 
 		// Create heading level setting
@@ -142,12 +143,12 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 				}));
 
 		// Position within section dropdown
-		new Setting(containerEl)
+		this.positionSetting = new Setting(containerEl)
 			.setName('Position within Section')
 			.setDesc('Where to insert the log entry within the selected section')
 			.addDropdown(dropdown => dropdown
-				.addOption('start', 'Start of section')
-				.addOption('end', 'End of section')
+				.addOption('start', 'Start') // will be updated at the end of the function.
+				.addOption('end', 'End') // will be updated at the end of the function.
 				.setValue(settings.sectionPosition)
 				.onChange(async (value: SectionPosition) => {
 					await this.settingsService.updateSettings({ sectionPosition: value });
@@ -155,7 +156,12 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 				}));
 
 		// Set initial visibility
-		this.updateHeadingLevelVisibility(settings.sectionSelection);
+		this.updateSettingsUi(settings.sectionSelection);
+	}
+
+	private updateSettingsUi(sectionSelection: SectionSelection): void {
+		this.updateHeadingLevelVisibility(sectionSelection);
+		this.updatePositionLabels(sectionSelection);
 	}
 
 	/**
@@ -172,5 +178,35 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		} else {
 			container.style.display = '';
 		}
+	}
+
+	/**
+	 * Update the labels of the positioning setting to reflect the "setting" or "page" choice.
+	 * @param sectionSelection The current section selection
+	 */
+	private updatePositionLabels(sectionSelection: SectionSelection): void {
+		const component = this.positionSetting?.controlEl;
+		const labels = {
+			file: {
+				start: 'Start of file',
+				end: 'End of file',
+			},
+			section: {
+				start: 'Start of section',
+				end: 'End of section',
+			},
+		};
+
+		if (!component) return;
+
+		const labelKey = (sectionSelection === 'file') ? 'file' : 'section';
+		const labelsMap = labels[labelKey];
+
+		Object.entries(labelsMap).forEach(([key, label]) => {
+			const option = component.querySelector(`option[value="${key}"]`);
+			if (!option || !label) return;
+
+			option.textContent = label;
+		});
 	}
 }
