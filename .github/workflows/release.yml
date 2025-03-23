@@ -1,5 +1,8 @@
 name: Release Obsidian plugin
 
+env:
+    PLUGIN_ZIP_NAME: pst-personal-rest-api.zip
+
 on:
     workflow_dispatch:
     push:
@@ -30,7 +33,7 @@ jobs:
             -   name: Create zip archive
                 run: |
                     cd dist
-                    zip -r ../pst-personal-rest-api.zip .
+                    zip -r ../${{ env.PLUGIN_ZIP_NAME }} .
 
             -   name: Create release
                 env:
@@ -41,4 +44,4 @@ jobs:
                     gh release create "$tag" \
                       --title="$tag" \
                       --draft \
-                      pst-personal-rest-api.zip dist/main.js dist/styles.css dist/manifest.json
+                      ${{ env.PLUGIN_ZIP_NAME }} dist/main.js dist/styles.css dist/manifest.json
