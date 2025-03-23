@@ -1,7 +1,7 @@
 {
 	"id": "pst-personal-rest-api",
 	"name": "Personal REST API",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "0.15.0",
 	"description": "Enables some personal workflows via custom REST API endpoints.",
 	"author": "Philipp Stracker",
