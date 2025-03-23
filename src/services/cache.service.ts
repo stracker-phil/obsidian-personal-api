@@ -3,6 +3,7 @@
  */
 export class CacheService {
     private cacheKey: string;
+    private lastEntryTimeKey: string;
     
     /**
      * Create a new CacheService
@@ -10,6 +11,7 @@ export class CacheService {
      */
     constructor(cacheKey: string = 'journalLogCache') {
         this.cacheKey = cacheKey;
+        this.lastEntryTimeKey = `${cacheKey}_lastEntryTime`;
     }
     
     /**
@@ -48,5 +50,21 @@ export class CacheService {
     hasEntries(): boolean {
         const cache = this.getEntries();
         return cache !== null && cache.trim() !== '';
+    }
+    
+    /**
+     * Update the last entry time to current time
+     */
+    updateLastEntryTime(): void {
+        localStorage.setItem(this.lastEntryTimeKey, new Date().toISOString());
+    }
+    
+    /**
+     * Get the last entry time
+     * @returns Date object of the last entry time or null if no entries have been made
+     */
+    getLastEntryTime(): Date | null {
+        const lastEntryTime = localStorage.getItem(this.lastEntryTimeKey);
+        return lastEntryTime ? new Date(lastEntryTime) : null;
     }
 }

@@ -1,4 +1,4 @@
-import { LoggingService } from "../services/logging.service";
+import { LoggingService, LogEntrySource } from "../services/logging.service";
 
 /**
  * Base interface for all endpoint handlers
@@ -55,7 +55,9 @@ export class LogEndpointHandler extends BaseEndpointHandler {
         }
         
         try {
-            const result = await this.loggingService.addLogEntry(req.query.log);
+            const result = await this.loggingService.addLogEntry(req.query.log, {
+                source: LogEntrySource.API
+            });
             
             if (result.success) {
                 res.send('OK');

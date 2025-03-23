@@ -1,6 +1,6 @@
 import { Plugin } from 'obsidian';
 import { RestApiService } from './services/restApi.service';
-import { LoggingService } from './services/logging.service';
+import { LoggingService, LogEntrySource } from './services/logging.service';
 import { DailyNoteService } from './services/dailyNote.service';
 import { CacheService } from './services/cache.service';
 import { SettingsService } from './services/settings.service';
@@ -37,6 +37,9 @@ export default class PersonalRestApiPlugin extends Plugin {
             }
         );
         
+        // Set the manual entry format
+        this.loggingService.setManualEntryFormat(settings.manualLogEntryFormat);
+        
         this.restApiService = new RestApiService(this.app);
         
         // Initialize REST API
@@ -59,7 +62,9 @@ export default class PersonalRestApiPlugin extends Plugin {
             name: 'Add log entry',
             callback: () => {
                 new LogEntryModal(this.app, (logEntry) => {
-                    this.loggingService.addLogEntry(logEntry);
+                    this.loggingService.addLogEntry(logEntry, {
+                        source: LogEntrySource.MANUAL
+                    });
                 }).open();
             }
         });

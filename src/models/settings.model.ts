@@ -13,9 +13,14 @@ export type SectionPosition = 'start' | 'end';
  */
 export interface PluginSettings {
     /**
-     * Format string for log entries. Uses '{entry}' as placeholder.
+     * Format string for log entries from REST API. Uses '{entry}' as placeholder.
      */
     logEntryFormat: string;
+    
+    /**
+     * Format string for manual log entries. Uses '{entry}' as placeholder.
+     */
+    manualLogEntryFormat: string;
     
     /**
      * The heading level to identify sections (e.g., '#', '##')
@@ -42,7 +47,8 @@ export interface PluginSettings {
  * Default plugin settings
  */
 export const DEFAULT_SETTINGS: PluginSettings = {
-    logEntryFormat: '- [x] {entry}',
+    logEntryFormat: '- [x] {currentTime} {entry}',
+    manualLogEntryFormat: '- [x] 📝 {currentTime} {entry}',
     sectionHeadingLevel: '##',
     sectionSelection: 'last-heading',
     sectionPosition: 'end',

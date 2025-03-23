@@ -6,6 +6,14 @@ import { MarkdownUtils } from '../utils/markdown.utils';
 import { DEFAULT_SETTINGS, SectionPosition, SectionSelection } from '../models/settings.model';
 
 /**
+ * Log entry source type
+ */
+export enum LogEntrySource {
+    API = 'api',
+    MANUAL = 'manual'
+}
+
+/**
  * Options for logging entries
  */
 export interface LogEntryOptions {
@@ -13,6 +21,7 @@ export interface LogEntryOptions {
     sectionSelection?: SectionSelection;
     sectionPosition?: SectionPosition;
     sectionHeadingLevel?: string;
+    source?: LogEntrySource;
 }
 
 /**
@@ -23,6 +32,7 @@ export class LoggingService {
     private dailyNoteService: DailyNoteService;
     private cacheService: CacheService;
     private options: LogEntryOptions;
+    private manualEntryFormat: string;
     
     /**
      * Create a new LoggingService
@@ -45,8 +55,10 @@ export class LoggingService {
             sectionSelection: DEFAULT_SETTINGS.sectionSelection,
             sectionPosition: DEFAULT_SETTINGS.sectionPosition,
             sectionHeadingLevel: DEFAULT_SETTINGS.sectionHeadingLevel,
+            source: LogEntrySource.API,
             ...options
         };
+        this.manualEntryFormat = DEFAULT_SETTINGS.manualLogEntryFormat;
     }
     
     /**
@@ -61,8 +73,20 @@ export class LoggingService {
     ): Promise<LogResult> {
         const mergedOptions = { ...this.options, ...options };
         
-        // Format the entry
-        const formattedEntry = MarkdownUtils.formatLogEntry(entry, mergedOptions.format);
+        // Get the last entry time before updating it
+        const lastEntryTime = this.cacheService.getLastEntryTime();
+        
+        // Update the last entry time
+        this.cacheService.updateLastEntryTime();
+        
+        // Choose the format based on the source
+        let formatToUse = mergedOptions.format;
+        if (mergedOptions.source === LogEntrySource.MANUAL) {
+            formatToUse = this.manualEntryFormat;
+        }
+        
+        // Format the entry with time variables
+        const formattedEntry = MarkdownUtils.formatLogEntry(entry, formatToUse, lastEntryTime);
         
         // Get daily note
         const journal = this.dailyNoteService.getCurrentDailyNote();
@@ -123,5 +147,18 @@ export class LoggingService {
      */
     updateOptions(options: Partial<LogEntryOptions>): void {
         this.options = { ...this.options, ...options };
+        
+        // If manualEntryFormat is provided, update it
+        if (options.format && options.source === LogEntrySource.MANUAL) {
+            this.manualEntryFormat = options.format;
+        }
+    }
+    
+    /**
+     * Set the manual entry format
+     * @param format Format string to use for manual entries
+     */
+    setManualEntryFormat(format: string): void {
+        this.manualEntryFormat = format;
     }
 }

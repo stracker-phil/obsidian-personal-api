@@ -81,7 +81,7 @@ export class LogEntryModal extends Modal {
 		if (!entry) {
 			return;
 		}
-		
+
 		this.onSubmit(entry);
 	}
 

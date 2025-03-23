@@ -62,16 +62,49 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		statusEl.style.marginBottom = '20px';
 		statusEl.style.marginTop = '10px';
 
-		containerEl.createEl('h2', { text: 'Log Entry Format' });
+		containerEl.createEl('h2', { text: 'Log Entry Formats' });
+        
+        // Add format variables documentation
+        const formatDocsEl = containerEl.createEl('div', { cls: 'format-variables-docs' });
+        formatDocsEl.createEl('p', { 
+            text: 'Available variables for log entry formats:',
+            cls: 'format-docs-title'
+        });
+        
+        const variablesList = formatDocsEl.createEl('ul', { cls: 'format-variables-list' });
+        variablesList.createEl('li', { 
+            text: '{entry} - The actual log entry text (required)'
+        });
+        variablesList.createEl('li', { 
+            text: '{currentTime} - Current time in 24-hour format (HH:MM)'
+        });
+        variablesList.createEl('li', { 
+            text: '{lastEntryTime} - Time of the last log entry in 24-hour format (HH:MM)'
+        });
+        
+        formatDocsEl.style.backgroundColor = '#f5f5f5';
+        formatDocsEl.style.padding = '10px';
+        formatDocsEl.style.borderRadius = '5px';
+        formatDocsEl.style.marginBottom = '15px';
 
 		new Setting(containerEl)
-			.setName('Entry Format')
-			.setDesc('Format for log entries. Use {entry} as a placeholder for the actual content.')
+			.setName('API Entry Format')
+			.setDesc('Format for log entries coming from the REST API.')
 			.addText(text => text
 				.setValue(settings.logEntryFormat)
 				.onChange(async (value) => {
 					await this.settingsService.updateSettings({ logEntryFormat: value });
 					this.loggingService.updateOptions({ format: value });
+				}));
+        
+        new Setting(containerEl)
+			.setName('Manual Entry Format')
+			.setDesc('Format for log entries added manually via Obsidian.')
+			.addText(text => text
+				.setValue(settings.manualLogEntryFormat)
+				.onChange(async (value) => {
+					await this.settingsService.updateSettings({ manualLogEntryFormat: value });
+					this.loggingService.setManualEntryFormat(value);
 				}));
 
 		containerEl.createEl('h2', { text: 'Log Entry Placement' });
