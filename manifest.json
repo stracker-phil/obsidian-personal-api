@@ -1,9 +1,9 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "pst-personal-rest-api",
+	"name": "Personal REST API",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
+	"description": "Enables some personal workflows via custom REST API endpoints.",
 	"author": "Philipp Stracker",
 	"authorUrl": "https://philippstracker.com/",
 	"fundingUrl": "https://philippstracker.com/donate/",
