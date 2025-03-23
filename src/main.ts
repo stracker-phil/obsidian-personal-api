@@ -6,6 +6,7 @@ import { CacheService } from './services/cache.service';
 import { SettingsService } from './services/settings.service';
 import { PersonalRestApiSettingTab } from './ui/settings-tab';
 import { EndpointFactory } from './endpoints/endpoint';
+import { LogEntryModal } from './ui/LogEntryModal';
 
 export default class PersonalRestApiPlugin extends Plugin {
     private restApiService!: RestApiService;
@@ -52,11 +53,15 @@ export default class PersonalRestApiPlugin extends Plugin {
             }
         }
         
-        // Add the log command
+        // Add the log command with modal prompt
         this.addCommand({
             id: 'add-log-entry',
             name: 'Add log entry',
-            callback: () => this.loggingService.addLogEntry('Test log entry')
+            callback: () => {
+                new LogEntryModal(this.app, (logEntry) => {
+                    this.loggingService.addLogEntry(logEntry);
+                }).open();
+            }
         });
         
         // Add settings tab

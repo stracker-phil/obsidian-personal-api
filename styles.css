@@ -3,6 +3,31 @@
 This CSS file will be included with your plugin, and
 available in the app when your plugin is enabled.
 
-If your plugin does not need CSS, delete this file.
-
 */
+
+.modal .personal-api-log {
+	input[type=text] {
+		width: 100%;
+	}
+
+	.modal-button-container {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 1rem;
+
+		.setting-item {
+			border: none;
+			padding: 0;
+			margin-left: 0.5rem;
+		}
+
+		.setting-item-info {
+			display: none;
+		}
+
+		.setting-item-control {
+			padding: 0;
+		}
+	}
+}
+
