@@ -1,25 +1,74 @@
 import { Plugin } from 'obsidian';
-import { initializeApiExtension, removeApiExtension } from './restApi';
-import { initializeJournal, addLogEntry } from './journal';
+import { RestApiService } from './services/restApi.service';
+import { LoggingService } from './services/logging.service';
+import { DailyNoteService } from './services/dailyNote.service';
+import { CacheService } from './services/cache.service';
+import { SettingsService } from './services/settings.service';
+import { PersonalRestApiSettingTab } from './ui/settings-tab';
+import { EndpointFactory } from './endpoints/endpoint';
 
 export default class PersonalRestApiPlugin extends Plugin {
-	async onload() {
-		console.log('Loading Personal REST API plugin');
-
-		// Initialize modules with app instance
-		initializeJournal(this.app);
-		initializeApiExtension(this.app, addLogEntry);
-
-		// Add the log command
-		this.addCommand({
-			id: 'add-log-entry',
-			name: 'Add log entry',
-			callback: () => addLogEntry('Test log entry')
-		});
-	}
-
-	onunload() {
-		console.log('Unloading Personal REST API plugin');
-		removeApiExtension();
-	}
+    private restApiService!: RestApiService;
+    private loggingService!: LoggingService;
+    private settingsService!: SettingsService;
+    
+    async onload() {
+        console.log('Loading Personal REST API plugin');
+        
+        // Initialize services
+        this.settingsService = new SettingsService(this);
+        await this.settingsService.loadSettings();
+        
+        const settings = this.settingsService.getSettings();
+        
+        const dailyNoteService = new DailyNoteService(this.app);
+        const cacheService = new CacheService(settings.cacheKey);
+        
+        this.loggingService = new LoggingService(
+            this.app, 
+            dailyNoteService, 
+            cacheService,
+            {
+                format: settings.logEntryFormat,
+                location: settings.insertLocation,
+                headerLevel: settings.headerLevel
+            }
+        );
+        
+        this.restApiService = new RestApiService(this.app);
+        
+        // Initialize REST API
+        if (this.restApiService.initialize()) {
+            // Register all endpoint handlers
+            const endpoints = EndpointFactory.createEndpoints(this.loggingService);
+            
+            for (const endpoint of endpoints) {
+                this.restApiService.registerRoute(
+                    endpoint.getMethod(),
+                    endpoint.getPath(),
+                    endpoint.handleRequest.bind(endpoint)
+                );
+            }
+        }
+        
+        // Add the log command
+        this.addCommand({
+            id: 'add-log-entry',
+            name: 'Add log entry',
+            callback: () => this.loggingService.addLogEntry('Test log entry')
+        });
+        
+        // Add settings tab
+        this.addSettingTab(new PersonalRestApiSettingTab(
+            this.app, 
+            this, 
+            this.settingsService, 
+            this.loggingService
+        ));
+    }
+    
+    onunload() {
+        console.log('Unloading Personal REST API plugin');
+        this.restApiService.cleanup();
+    }
 }
