@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "pst-personal-rest-api",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Enables some personal workflows via custom REST API endpoints",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
