@@ -47,10 +47,10 @@ export interface PluginSettings {
  * Default plugin settings
  */
 export const DEFAULT_SETTINGS: PluginSettings = {
-	logEntryFormat: '- [x] {currentTime} {entry}',
-	manualLogEntryFormat: '- [x] 📝 {currentTime} {entry}',
+	logEntryFormat: '- [x] {entry}',
+	manualLogEntryFormat: '- [x] {lastEntryTime} - {currentTime} {entry}',
 	sectionHeadingLevel: '##',
-	sectionSelection: 'last-heading',
+	sectionSelection: 'first-heading',
 	sectionPosition: 'end',
 	cacheKey: 'journalLogCache',
 };
