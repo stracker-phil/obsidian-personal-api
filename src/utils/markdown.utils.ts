@@ -55,8 +55,23 @@ export class MarkdownUtils {
      * @returns The line to insert at
      */
     static findSectionStartInsertPoint(lines: string[], sectionStart: number): number {
-        // Insert right after the heading
-        return sectionStart + 1;
+        // Start from line after heading
+        let insertPoint = sectionStart + 1;
+        const sectionEnd = this.findSectionEnd(lines, sectionStart);
+        
+        // Skip any blank lines after the heading
+        while (insertPoint <= sectionEnd && lines[insertPoint].trim() === '') {
+            insertPoint++;
+        }
+        
+        // If we've reached the end of the section or file (all blank lines),
+        // insert at the first blank line after header
+        if (insertPoint > sectionEnd || insertPoint >= lines.length) {
+            return sectionStart + 1;
+        }
+        
+        // Insert before the first non-blank line
+        return insertPoint;
     }
     
     /**
