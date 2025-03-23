@@ -10,7 +10,10 @@ This plugin is tailored to specific personal needs rather than being a general-p
 - Automatically adds log entries to your daily notes
 - Caches log entries if no daily note exists yet
 - Customizable log entry format and placement
-- Provides an Obsidian command to manually add log entries
+- Different formats for API-based and manual log entries
+- Smart placeholder variables for timestamps
+- Provides an Obsidian command with a user-friendly modal for adding log entries manually
+- Respects the structure of Markdown documents, preserving blank lines after headers
 
 ## Requirements
 
@@ -23,7 +26,8 @@ This plugin is tailored to specific personal needs rather than being a general-p
 1. Ensure the Local REST API plugin is installed and active
 2. Ensure the Daily Notes plugin is active
 3. Install the plugin and activate it
-4. Reload Obsidian if necessary
+4. Configure your log entry formats and placement preferences in Settings
+5. Reload Obsidian if necessary
 
 ## API Endpoints
 
@@ -39,6 +43,17 @@ GET https://localhost:27124/log?log=Your+log+entry+here
 
 Make sure to include your API key as specified in the Local REST API plugin settings.
 
+## Manual Entry
+
+The plugin provides an Obsidian command for manual entry:
+
+1. Open the command palette (Ctrl/Cmd + P)
+2. Search for "Add log entry"
+3. Enter your log entry text in the modal
+4. Press Enter or click "Add Entry"
+
+Manual entries use a separate format specified in settings, making it easy to distinguish between API and manual entries.
+
 ## Usage with Keyboard Maestro
 
 You can set up a Keyboard Maestro macro that uses a bash command to send data to the endpoint:
@@ -53,9 +68,25 @@ curl -H "Authorization: Bearer $KMVAR_Instance_Token" "https://127.0.0.1:27124/l
 
 The plugin provides several customization options:
 
-- **Log Entry Format**: Format for log entries. Use `{entry}` as a placeholder for the actual content.
-- **Header Level**: The level of header to insert logs after (e.g., `##`).
-- **Insert Location**: Where to insert log entries in the daily note (after last heading, start of file, or end of file).
+### Log Entry Formats
+
+- **API Entry Format**: Format for log entries coming from the REST API
+- **Manual Entry Format**: Format for log entries added manually via Obsidian
+
+Both formats support the following variables:
+- `{entry}` - The actual log entry text (required)
+- `{currentTime}` - Current time in 24-hour format (HH:MM)
+- `{lastEntryTime}` - Time of the last log entry in 24-hour format (HH:MM)
+
+Example formats:
+- `- [x] {currentTime} {entry}`
+- `- [x] 📝 {currentTime} {entry} (last entry: {lastEntryTime})`
+
+### Log Entry Placement
+
+- **Section Selection**: Which section to insert entries into (first heading, last heading, or whole file)
+- **Heading Level**: Which heading level to use (e.g., `##`, `###`)
+- **Position within Section**: Where to insert entries (start or end of section)
 
 ## Architecture
 
@@ -65,7 +96,7 @@ The plugin follows a modular, service-based architecture:
   - `RestApiService`: Manages API routes and request handling
   - `LoggingService`: Handles log entry creation and storage
   - `DailyNoteService`: Manages interactions with daily notes
-  - `CacheService`: Provides persistent storage for logs
+  - `CacheService`: Provides persistent storage for logs and time tracking
   - `SettingsService`: Manages plugin settings
 
 - **Endpoints**: Modular API endpoint handlers
@@ -76,7 +107,10 @@ The plugin follows a modular, service-based architecture:
   - `PluginUtils`: Utilities for accessing other plugins
   - `FileUtils`: Utilities for file operations
   - `MarkdownUtils`: Utilities for markdown-specific operations
+  - `TimeUtils`: Utilities for time formatting and timestamp management
 
 - **Models**: Data structures and type definitions
 
-- **UI**: User interface components for settings
+- **UI**: User interface components
+  - `LogEntryModal`: Modal dialog for entering log entries manually
+  - `PersonalRestApiSettingTab`: Settings tab for plugin configuration
