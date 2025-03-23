@@ -1,9 +1,19 @@
 import { App } from 'obsidian';
 import { DailyNoteService } from './dailyNote.service';
 import { CacheService } from './cache.service';
-import { LogEntryOptions, LogResult } from '../models/types';
+import { LogResult } from '../models/types';
 import { MarkdownUtils } from '../utils/markdown.utils';
-import { DEFAULT_SETTINGS } from '../models/settings.model';
+import { DEFAULT_SETTINGS, SectionPosition, SectionSelection } from '../models/settings.model';
+
+/**
+ * Options for logging entries
+ */
+export interface LogEntryOptions {
+    format?: string;
+    sectionSelection?: SectionSelection;
+    sectionPosition?: SectionPosition;
+    sectionHeadingLevel?: string;
+}
 
 /**
  * Service for logging entries to daily notes
@@ -32,8 +42,9 @@ export class LoggingService {
         this.cacheService = cacheService;
         this.options = {
             format: DEFAULT_SETTINGS.logEntryFormat,
-            location: DEFAULT_SETTINGS.insertLocation,
-            headerLevel: DEFAULT_SETTINGS.headerLevel,
+            sectionSelection: DEFAULT_SETTINGS.sectionSelection,
+            sectionPosition: DEFAULT_SETTINGS.sectionPosition,
+            sectionHeadingLevel: DEFAULT_SETTINGS.sectionHeadingLevel,
             ...options
         };
     }
@@ -78,25 +89,13 @@ export class LoggingService {
             // Read the file
             const lines = await this.dailyNoteService.readFile(journal);
             
-            // Find insert position based on location setting
-            let insertPosition: number;
-            
-            switch (mergedOptions.location) {
-                case 'file-start':
-                    insertPosition = 0;
-                    break;
-                case 'file-end':
-                    insertPosition = lines.length;
-                    break;
-                case 'last-heading':
-                default:
-                    insertPosition = this.dailyNoteService.findInsertPosition(
-                        lines,
-                        mergedOptions.headerLevel!,
-                        'last'
-                    );
-                    break;
-            }
+            // Find the insertion point using the new logic
+            const insertPosition = MarkdownUtils.findInsertionPoint(
+                lines,
+                mergedOptions.sectionSelection as SectionSelection,
+                mergedOptions.sectionPosition as SectionPosition,
+                mergedOptions.sectionHeadingLevel
+            );
             
             // Insert the entry
             lines.splice(insertPosition, 0, finalEntry);

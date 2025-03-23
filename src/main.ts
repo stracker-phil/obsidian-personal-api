@@ -30,8 +30,9 @@ export default class PersonalRestApiPlugin extends Plugin {
             cacheService,
             {
                 format: settings.logEntryFormat,
-                location: settings.insertLocation,
-                headerLevel: settings.headerLevel
+                sectionSelection: settings.sectionSelection,
+                sectionPosition: settings.sectionPosition,
+                sectionHeadingLevel: settings.sectionHeadingLevel
             }
         );
         

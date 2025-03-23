@@ -3,6 +3,7 @@ import { getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface';
 import { DailyNoteOperationResult, FileOperationResult } from '../models/types';
 import { FileUtils } from '../utils/file.utils';
 import { MarkdownUtils } from '../utils/markdown.utils';
+import { SectionPosition } from '../models/settings.model';
 
 /**
  * Service for interacting with daily notes
@@ -67,7 +68,16 @@ export class DailyNoteService {
         headerLevel: string, 
         position: 'first' | 'last' = 'last'
     ): number {
-        return MarkdownUtils.findLineAfterHeader(lines, headerLevel, position);
+        // Convert old parameters to new format
+        const sectionSelection = position === 'first' ? 'first-heading' : 'last-heading';
+        const sectionPosition: SectionPosition = 'end'; // Default to end of section
+        
+        return MarkdownUtils.findInsertionPoint(
+            lines, 
+            sectionSelection, 
+            sectionPosition, 
+            headerLevel
+        );
     }
 
     /**

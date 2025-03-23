@@ -3,96 +3,141 @@ import PersonalRestApiPlugin from '../main';
 import { SettingsService } from '../services/settings.service';
 import { LoggingService } from '../services/logging.service';
 import { PluginUtils } from '../utils/plugin.utils';
+import { SectionPosition, SectionSelection } from '../models/settings.model';
 
 export class PersonalRestApiSettingTab extends PluginSettingTab {
-    private plugin: PersonalRestApiPlugin;
-    private settingsService: SettingsService;
-    private loggingService: LoggingService;
+	private plugin: PersonalRestApiPlugin;
+	private settingsService: SettingsService;
+	private loggingService: LoggingService;
+	private headingLevelSetting: Setting | null = null;
 
-    constructor(
-        app: App, 
-        plugin: PersonalRestApiPlugin,
-        settingsService: SettingsService,
-        loggingService: LoggingService
-    ) {
-        super(app, plugin);
-        this.plugin = plugin;
-        this.settingsService = settingsService;
-        this.loggingService = loggingService;
-    }
+	constructor(
+		app: App,
+		plugin: PersonalRestApiPlugin,
+		settingsService: SettingsService,
+		loggingService: LoggingService,
+	) {
+		super(app, plugin);
+		this.plugin = plugin;
+		this.settingsService = settingsService;
+		this.loggingService = loggingService;
+	}
 
-    display(): void {
-        const { containerEl } = this;
-        const settings = this.settingsService.getSettings();
+	display(): void {
+		const { containerEl } = this;
+		const settings = this.settingsService.getSettings();
 
-        containerEl.empty();
+		containerEl.empty();
 
-        containerEl.createEl('h1', { text: 'Personal REST API Settings' });
+		containerEl.createEl('h1', { text: 'Personal REST API Settings' });
 
-        // Plugin dependency status
-        const restApiStatus = PluginUtils.isPluginActive(this.app, 'obsidian-local-rest-api');
-        const dailyNotesStatus = PluginUtils.isPluginActive(this.app, 'daily-notes');
+		// Plugin dependency status
+		const restApiStatus = PluginUtils.isPluginActive(this.app, 'obsidian-local-rest-api');
+		const dailyNotesStatus = PluginUtils.isPluginActive(this.app, 'daily-notes');
 
-        const statusEl = containerEl.createEl('div', { cls: 'plugin-status' });
-        
-        statusEl.createEl('div', { 
-            text: `${restApiStatus.isActive ? '✅' : '❌'} Local REST API plugin is ${restApiStatus.isActive ? 'active' : 'not active'}`,
-            cls: restApiStatus.isActive ? 'status-ok' : 'status-error'
-        });
-        
-        statusEl.createEl('div', { 
-            text: `${dailyNotesStatus.isActive ? '✅' : '❌'} Daily Notes plugin is ${dailyNotesStatus.isActive ? 'active' : 'not active'}`,
-            cls: dailyNotesStatus.isActive ? 'status-ok' : 'status-error'
-        });
+		const statusEl = containerEl.createEl('div', { cls: 'plugin-status' });
 
-        if (!restApiStatus.isActive || !dailyNotesStatus.isActive) {
-            const warningEl = statusEl.createEl('div', { 
-                text: 'Warning: The log endpoint requires both plugins to be active.',
-                cls: 'status-warning'
-            });
-            warningEl.style.marginTop = '10px';
-            warningEl.style.fontWeight = 'bold';
-        }
+		statusEl.createEl('div', {
+			text: `${restApiStatus.isActive ? '✅' : '❌'} Local REST API plugin is ${restApiStatus.isActive ? 'active' : 'not active'}`,
+			cls: restApiStatus.isActive ? 'status-ok' : 'status-error',
+		});
 
-        statusEl.style.backgroundColor = '#f5f5f5';
-        statusEl.style.padding = '10px';
-        statusEl.style.borderRadius = '5px';
-        statusEl.style.marginBottom = '20px';
-        statusEl.style.marginTop = '10px';
+		statusEl.createEl('div', {
+			text: `${dailyNotesStatus.isActive ? '✅' : '❌'} Daily Notes plugin is ${dailyNotesStatus.isActive ? 'active' : 'not active'}`,
+			cls: dailyNotesStatus.isActive ? 'status-ok' : 'status-error',
+		});
 
-        containerEl.createEl('h2', { text: 'Log Entry Settings' });
+		if (!restApiStatus.isActive || !dailyNotesStatus.isActive) {
+			const warningEl = statusEl.createEl('div', {
+				text: 'Warning: The log endpoint requires both plugins to be active.',
+				cls: 'status-warning',
+			});
+			warningEl.style.marginTop = '10px';
+			warningEl.style.fontWeight = 'bold';
+		}
 
-        new Setting(containerEl)
-            .setName('Log Entry Format')
-            .setDesc('Format for log entries. Use {entry} as a placeholder for the actual content.')
-            .addText(text => text
-                .setValue(settings.logEntryFormat)
-                .onChange(async (value) => {
-                    await this.settingsService.updateSettings({ logEntryFormat: value });
-                    this.loggingService.updateOptions({ format: value });
-                }));
+		statusEl.style.backgroundColor = '#f5f5f5';
+		statusEl.style.padding = '10px';
+		statusEl.style.borderRadius = '5px';
+		statusEl.style.marginBottom = '20px';
+		statusEl.style.marginTop = '10px';
 
-        new Setting(containerEl)
-            .setName('Header Level')
-            .setDesc('The level of header to insert logs after (e.g., ##)')
-            .addText(text => text
-                .setValue(settings.headerLevel)
-                .onChange(async (value) => {
-                    await this.settingsService.updateSettings({ headerLevel: value });
-                    this.loggingService.updateOptions({ headerLevel: value });
-                }));
+		containerEl.createEl('h2', { text: 'Log Entry Format' });
 
-        new Setting(containerEl)
-            .setName('Insert Location')
-            .setDesc('Where to insert log entries in the daily note')
-            .addDropdown(dropdown => dropdown
-                .addOption('last-heading', 'After last heading')
-                .addOption('file-start', 'Start of file')
-                .addOption('file-end', 'End of file')
-                .setValue(settings.insertLocation)
-                .onChange(async (value: 'last-heading' | 'file-start' | 'file-end') => {
-                    await this.settingsService.updateSettings({ insertLocation: value });
-                    this.loggingService.updateOptions({ location: value });
-                }));
-    }
+		new Setting(containerEl)
+			.setName('Entry Format')
+			.setDesc('Format for log entries. Use {entry} as a placeholder for the actual content.')
+			.addText(text => text
+				.setValue(settings.logEntryFormat)
+				.onChange(async (value) => {
+					await this.settingsService.updateSettings({ logEntryFormat: value });
+					this.loggingService.updateOptions({ format: value });
+				}));
+
+		containerEl.createEl('h2', { text: 'Log Entry Placement' });
+
+		// Section selection dropdown
+		new Setting(containerEl)
+			.setName('Section Selection')
+			.setDesc('Which section to insert the log entry into')
+			.addDropdown(dropdown => dropdown
+				.addOption('first-heading', 'First heading of level')
+				.addOption('last-heading', 'Last heading of level')
+				.addOption('file', 'Whole file')
+				.setValue(settings.sectionSelection)
+				.onChange(async (value: SectionSelection) => {
+					await this.settingsService.updateSettings({ sectionSelection: value });
+					this.loggingService.updateOptions({ sectionSelection: value });
+
+					// Dynamically show/hide heading level setting
+					this.updateHeadingLevelVisibility(value);
+				}));
+
+		// Create heading level setting
+		this.headingLevelSetting = new Setting(containerEl)
+			.setName('Heading Level')
+			.setDesc('Which heading level to use for section identification')
+			.addDropdown(dropdown => dropdown
+				.addOption('#', 'Level 1 (#)')
+				.addOption('##', 'Level 2 (##)')
+				.addOption('###', 'Level 3 (###)')
+				.addOption('####', 'Level 4 (####)')
+				.setValue(settings.sectionHeadingLevel)
+				.onChange(async (value) => {
+					await this.settingsService.updateSettings({ sectionHeadingLevel: value });
+					this.loggingService.updateOptions({ sectionHeadingLevel: value });
+				}));
+
+		// Position within section dropdown
+		new Setting(containerEl)
+			.setName('Position within Section')
+			.setDesc('Where to insert the log entry within the selected section')
+			.addDropdown(dropdown => dropdown
+				.addOption('start', 'Start of section')
+				.addOption('end', 'End of section')
+				.setValue(settings.sectionPosition)
+				.onChange(async (value: SectionPosition) => {
+					await this.settingsService.updateSettings({ sectionPosition: value });
+					this.loggingService.updateOptions({ sectionPosition: value });
+				}));
+
+		// Set initial visibility
+		this.updateHeadingLevelVisibility(settings.sectionSelection);
+	}
+
+	/**
+	 * Update the visibility of the heading level setting based on section selection
+	 * @param sectionSelection The current section selection
+	 */
+	private updateHeadingLevelVisibility(sectionSelection: SectionSelection): void {
+		const container = this.headingLevelSetting?.settingEl;
+
+		if (!container) return;
+
+		if (sectionSelection === 'file') {
+			container.style.display = 'none';
+		} else {
+			container.style.display = '';
+		}
+	}
 }

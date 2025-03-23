@@ -1,4 +1,14 @@
 /**
+ * Section selection type
+ */
+export type SectionSelection = 'first-heading' | 'last-heading' | 'file';
+
+/**
+ * Position within section
+ */
+export type SectionPosition = 'start' | 'end';
+
+/**
  * Plugin settings
  */
 export interface PluginSettings {
@@ -8,14 +18,19 @@ export interface PluginSettings {
     logEntryFormat: string;
     
     /**
-     * The level of header to insert logs after
+     * The heading level to identify sections (e.g., '#', '##')
      */
-    headerLevel: string;
+    sectionHeadingLevel: string;
     
     /**
-     * Where to insert log entries in the daily note
+     * Which section to insert the log entry into
      */
-    insertLocation: 'last-heading' | 'file-start' | 'file-end';
+    sectionSelection: SectionSelection;
+    
+    /**
+     * Where in the section to insert the log entry
+     */
+    sectionPosition: SectionPosition;
     
     /**
      * Key for storing cached entries in localStorage
@@ -28,7 +43,8 @@ export interface PluginSettings {
  */
 export const DEFAULT_SETTINGS: PluginSettings = {
     logEntryFormat: '- [x] {entry}',
-    headerLevel: '##',
-    insertLocation: 'last-heading',
+    sectionHeadingLevel: '##',
+    sectionSelection: 'last-heading',
+    sectionPosition: 'end',
     cacheKey: 'journalLogCache'
 };
