@@ -32,7 +32,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		const restApiStatus = PluginUtils.isPluginActive(this.app, 'obsidian-local-rest-api');
 		const dailyNotesStatus = PluginUtils.isPluginActive(this.app, 'daily-notes');
 
-		const statusEl = containerEl.createEl('div', { cls: 'plugin-status' });
+		const statusEl = containerEl.createEl('div', { cls: 'plugin-status-container' });
 
 		statusEl.createEl('div', {
 			text: `${restApiStatus.isActive ? '✅' : '❌'} Local REST API plugin is ${restApiStatus.isActive ? 'active' : 'not active'}`,
@@ -45,19 +45,11 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		});
 
 		if (!restApiStatus.isActive || !dailyNotesStatus.isActive) {
-			const warningEl = statusEl.createEl('div', {
+			statusEl.createEl('div', {
 				text: 'Warning: The log endpoint requires both plugins to be active.',
 				cls: 'status-warning',
 			});
-			warningEl.style.marginTop = '10px';
-			warningEl.style.fontWeight = 'bold';
 		}
-
-		statusEl.style.backgroundColor = 'var(--setting-items-background)';
-		statusEl.style.padding = '10px';
-		statusEl.style.borderRadius = '5px';
-		statusEl.style.marginBottom = '20px';
-		statusEl.style.marginTop = '10px';
 
 		containerEl.createEl('h2', { text: 'Log Entry Formats' });
 
@@ -65,10 +57,9 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		const formatDocsEl = containerEl.createEl('div', { cls: 'format-variables-docs' });
 		formatDocsEl.createEl('p', {
 			text: 'Available variables for log entry formats:',
-			cls: 'format-docs-title',
 		});
 
-		const variablesList = formatDocsEl.createEl('ul', { cls: 'format-variables-list' });
+		const variablesList = formatDocsEl.createEl('ul');
 		variablesList.createEl('li', {
 			text: '{entry} - The actual log entry text (required)',
 		});
@@ -78,11 +69,6 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		variablesList.createEl('li', {
 			text: '{lastEntryTime} - Time of the last log entry in 24-hour format (HH:MM)',
 		});
-
-		formatDocsEl.style.backgroundColor = '#f5f5f5';
-		formatDocsEl.style.padding = '10px';
-		formatDocsEl.style.borderRadius = '5px';
-		formatDocsEl.style.marginBottom = '15px';
 
 		new Setting(containerEl)
 			.setName('API Entry Format')
@@ -107,9 +93,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		containerEl.createEl('h2', { text: 'Log Entry Placement' });
 
 		// Explanation
-		const explanationEl = containerEl.createEl('div', { cls: 'setting-item-description' });
-		explanationEl.style.marginBottom = '15px';
-		explanationEl.style.color = 'var(--text-muted)';
+		const explanationEl = containerEl.createEl('div', { cls: 'placement-explanation' });
 		explanationEl.createEl('p', {
 			text: 'Log entries are inserted by searching for a specific heading. If the heading is found, entries are added at the end of that section. If not found, the heading is created at the fallback location.',
 		});

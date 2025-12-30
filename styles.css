@@ -5,6 +5,7 @@ available in the app when your plugin is enabled.
 
 */
 
+/* Modal styles */
 .modal .personal-api-log {
 	input[type=text] {
 		width: 100%;
@@ -31,3 +32,22 @@ available in the app when your plugin is enabled.
 	}
 }
 
+/* Settings tab styles */
+.plugin-status-container,
+.format-variables-docs {
+	background-color: var(--setting-items-background);
+	padding: var(--size-4-4);
+	border-radius: var(--setting-items-radius);
+	margin-bottom: var(--size-4-4);
+	margin-top: var(--size-4-2);
+}
+
+.status-warning {
+	margin-top: 10px;
+	font-weight: bold;
+}
+
+.placement-explanation {
+	margin-bottom: 15px;
+	color: var(--text-muted);
+}
