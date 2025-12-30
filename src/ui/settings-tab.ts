@@ -3,12 +3,14 @@ import PersonalRestApiPlugin from '../main';
 import { SettingsService } from '../services/settings.service';
 import { LoggingService } from '../services/logging.service';
 import { PluginUtils } from '../utils/plugin.utils';
-import { SectionPosition, SectionSelection } from '../models/settings.model';
+import { FallbackReference, SectionPosition, SectionSelection } from '../models/settings.model';
 
 export class PersonalRestApiSettingTab extends PluginSettingTab {
 	private settingsService: SettingsService;
 	private loggingService: LoggingService;
 	private headingLevelSetting: Setting | null = null;
+	private headingTextSetting: Setting | null = null;
+	private fallbackReferenceSetting: Setting | null = null;
 	private positionSetting: Setting | null = null;
 
 	constructor(
@@ -113,6 +115,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 			.setName('Section Selection')
 			.setDesc('Which section to insert the log entry into')
 			.addDropdown(dropdown => dropdown
+				.addOption('heading-text', 'Specific heading by text')
 				.addOption('first-heading', 'First heading of level')
 				.addOption('last-heading', 'Last heading of level')
 				.addOption('file', 'Whole file')
@@ -121,7 +124,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 					await this.settingsService.updateSettings({ sectionSelection: value });
 					this.loggingService.updateOptions({ sectionSelection: value });
 
-					// Dynamically show/hide heading level setting
+					// Dynamically show/hide settings based on selection
 					this.updateSettingsUi(value);
 				}));
 
@@ -140,13 +143,39 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 					this.loggingService.updateOptions({ sectionHeadingLevel: value });
 				}));
 
-		// Position within section dropdown
-		this.positionSetting = new Setting(containerEl)
-			.setName('Position within Section')
-			.setDesc('Where to insert the log entry within the selected section')
+		// Heading text input (for 'heading-text' mode)
+		this.headingTextSetting = new Setting(containerEl)
+			.setName('Heading Text')
+			.setDesc('The text of the heading to find (case-insensitive, punctuation is trimmed)')
+			.addText(text => text
+				.setPlaceholder('e.g., Log Items')
+				.setValue(settings.sectionHeadingText)
+				.onChange(async (value) => {
+					await this.settingsService.updateSettings({ sectionHeadingText: value });
+					this.loggingService.updateOptions({ sectionHeadingText: value });
+				}));
+
+		// Fallback reference (for 'heading-text' mode)
+		this.fallbackReferenceSetting = new Setting(containerEl)
+			.setName('Create Missing Heading After')
+			.setDesc('Where to create the heading if it doesn\'t exist in the daily note')
 			.addDropdown(dropdown => dropdown
-				.addOption('start', 'Start') // will be updated at the end of the function.
-				.addOption('end', 'End') // will be updated at the end of the function.
+				.addOption('first-heading', 'First heading of level')
+				.addOption('last-heading', 'Last heading of level')
+				.addOption('file', 'File boundary')
+				.setValue(settings.fallbackReference)
+				.onChange(async (value: FallbackReference) => {
+					await this.settingsService.updateSettings({ fallbackReference: value });
+					this.loggingService.updateOptions({ fallbackReference: value });
+				}));
+
+		// Position dropdown
+		this.positionSetting = new Setting(containerEl)
+			.setName('Position')
+			.setDesc('Position relative to the reference point')
+			.addDropdown(dropdown => dropdown
+				.addOption('before', 'Before')
+				.addOption('after', 'After')
 				.setValue(settings.sectionPosition)
 				.onChange(async (value: SectionPosition) => {
 					await this.settingsService.updateSettings({ sectionPosition: value });
@@ -157,54 +186,49 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		this.updateSettingsUi(settings.sectionSelection);
 	}
 
+	/**
+	 * Update the visibility and labels of settings based on section selection
+	 * @param sectionSelection The current section selection
+	 */
 	private updateSettingsUi(sectionSelection: SectionSelection): void {
-		this.updateHeadingLevelVisibility(sectionSelection);
-		this.updatePositionLabels(sectionSelection);
-	}
+		const isHeadingText = sectionSelection === 'heading-text';
+		const isFile = sectionSelection === 'file';
 
-	/**
-	 * Update the visibility of the heading level setting based on section selection
-	 * @param sectionSelection The current section selection
-	 */
-	private updateHeadingLevelVisibility(sectionSelection: SectionSelection): void {
-		const container = this.headingLevelSetting?.settingEl;
-
-		if (!container) return;
-
-		if (sectionSelection === 'file') {
-			container.style.display = 'none';
-		} else {
-			container.style.display = '';
+		// Heading level: show for all except 'file'
+		if (this.headingLevelSetting) {
+			this.headingLevelSetting.settingEl.style.display = isFile ? 'none' : '';
 		}
+
+		// Heading text: only show for 'heading-text'
+		if (this.headingTextSetting) {
+			this.headingTextSetting.settingEl.style.display = isHeadingText ? '' : 'none';
+		}
+
+		// Fallback reference: only show for 'heading-text'
+		if (this.fallbackReferenceSetting) {
+			this.fallbackReferenceSetting.settingEl.style.display = isHeadingText ? '' : 'none';
+		}
+
+		// Update position label contextually
+		this.updatePositionLabel(sectionSelection);
 	}
 
 	/**
-	 * Update the labels of the positioning setting to reflect the "setting" or "page" choice.
+	 * Update the position setting label based on context
 	 * @param sectionSelection The current section selection
 	 */
-	private updatePositionLabels(sectionSelection: SectionSelection): void {
-		const component = this.positionSetting?.controlEl;
-		const labels = {
-			file: {
-				start: 'Start of file',
-				end: 'End of file',
-			},
-			section: {
-				start: 'Start of section',
-				end: 'End of section',
-			},
-		};
+	private updatePositionLabel(sectionSelection: SectionSelection): void {
+		if (!this.positionSetting) return;
 
-		if (!component) return;
+		const nameEl = this.positionSetting.settingEl.querySelector('.setting-item-name');
+		const descEl = this.positionSetting.settingEl.querySelector('.setting-item-description');
 
-		const labelKey = (sectionSelection === 'file') ? 'file' : 'section';
-		const labelsMap = labels[labelKey];
-
-		Object.entries(labelsMap).forEach(([key, label]) => {
-			const option = component.querySelector(`option[value="${key}"]`);
-			if (!option || !label) return;
-
-			option.textContent = label;
-		});
+		if (sectionSelection === 'heading-text') {
+			if (nameEl) nameEl.textContent = 'Fallback Position';
+			if (descEl) descEl.textContent = 'Whether to insert before or after the reference point when creating the heading';
+		} else {
+			if (nameEl) nameEl.textContent = 'Position';
+			if (descEl) descEl.textContent = 'Position relative to the reference point';
+		}
 	}
 }

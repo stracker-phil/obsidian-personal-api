@@ -1,12 +1,17 @@
 /**
  * Section selection type
  */
-export type SectionSelection = 'first-heading' | 'last-heading' | 'file';
+export type SectionSelection = 'heading-text' | 'first-heading' | 'last-heading' | 'file';
 
 /**
- * Position within section
+ * Position relative to reference point
  */
-export type SectionPosition = 'start' | 'end';
+export type SectionPosition = 'before' | 'after';
+
+/**
+ * Fallback reference point when heading is not found
+ */
+export type FallbackReference = 'first-heading' | 'last-heading' | 'file';
 
 /**
  * Plugin settings
@@ -33,7 +38,17 @@ export interface PluginSettings {
 	sectionSelection: SectionSelection;
 
 	/**
-	 * Where in the section to insert the log entry
+	 * The text of the heading to find (only used when sectionSelection is 'heading-text')
+	 */
+	sectionHeadingText: string;
+
+	/**
+	 * Where to create the heading if it doesn't exist (only used when sectionSelection is 'heading-text')
+	 */
+	fallbackReference: FallbackReference;
+
+	/**
+	 * Position relative to the reference point
 	 */
 	sectionPosition: SectionPosition;
 
@@ -50,7 +65,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	logEntryFormat: '- [x] {entry}',
 	manualLogEntryFormat: '- [x] {lastEntryTime} - {currentTime} {entry}',
 	sectionHeadingLevel: '##',
-	sectionSelection: 'first-heading',
-	sectionPosition: 'end',
+	sectionSelection: 'heading-text',
+	sectionHeadingText: 'Log Items',
+	fallbackReference: 'last-heading',
+	sectionPosition: 'after',
 	cacheKey: 'journalLogCache',
 };

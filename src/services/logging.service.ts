@@ -36,6 +36,8 @@ export class LoggingService {
 			sectionSelection: DEFAULT_SETTINGS.sectionSelection,
 			sectionPosition: DEFAULT_SETTINGS.sectionPosition,
 			sectionHeadingLevel: DEFAULT_SETTINGS.sectionHeadingLevel,
+			sectionHeadingText: DEFAULT_SETTINGS.sectionHeadingText,
+			fallbackReference: DEFAULT_SETTINGS.fallbackReference,
 			source: LogEntrySource.API,
 			...options,
 		};
@@ -95,6 +97,8 @@ export class LoggingService {
 				mergedOptions.sectionSelection as SectionSelection,
 				mergedOptions.sectionPosition as SectionPosition,
 				mergedOptions.sectionHeadingLevel,
+				mergedOptions.sectionHeadingText,
+				mergedOptions.fallbackReference,
 			);
 
 			// Insert the entry

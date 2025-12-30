@@ -1,5 +1,5 @@
 import { TFile } from 'obsidian';
-import { SectionPosition, SectionSelection } from './settings.model';
+import { FallbackReference, SectionPosition, SectionSelection } from './settings.model';
 
 /**
  * Interface for the Local REST API plugin structure
@@ -61,6 +61,8 @@ export interface LogEntryOptions {
 	sectionSelection?: SectionSelection;
 	sectionPosition?: SectionPosition;
 	sectionHeadingLevel?: string;
+	sectionHeadingText?: string;
+	fallbackReference?: FallbackReference;
 	source?: LogEntrySource;
 }
 
