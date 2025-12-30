@@ -89,30 +89,39 @@ Example formats:
 
 ### Log Entry Placement
 
-The plugin offers flexible options for controlling where log entries are inserted in your daily notes:
+The plugin finds a specific heading by text and inserts log entries at the end of that section. If the heading doesn't exist, it will be created automatically at a fallback location.
 
-#### Heading by Text (Recommended)
+**Settings:**
 
-This mode finds a specific heading by its text and inserts entries at the end of that section. If the heading doesn't exist, it will be created automatically.
+- **Heading Level**: The heading level to search for (e.g., `##`, `###`, `####`)
+- **Heading Text**: The text of the heading to find
+  - Case-insensitive matching (e.g., "Log Items" matches "log items")
+  - Punctuation is automatically trimmed (e.g., "Activity Log:" matches "Activity Log")
+  - Examples: `Log Items`, `Activity Log`, `Done Today`
+- **Fallback Reference**: Where to create the heading if it doesn't exist
+  - `First heading of level` - Create before/after the first heading of the specified level
+  - `Last heading of level` - Create before/after the last heading of the specified level
+  - `File boundary` - Create at the start or end of the file
+- **Fallback Position**: Whether to insert `before` or `after` the fallback reference
 
-- **Section Selection**: Choose "Specific heading by text"
-- **Heading Level**: The heading level to search for/create (e.g., `##`, `###`)
-- **Heading Text**: The text of the heading to find (case-insensitive, punctuation is automatically trimmed)
-  - Example: `Log Items`, `Activity Log`, `Done Today`
-- **Create Missing Heading After**: Where to create the heading if it doesn't exist
-  - First/Last heading of level
-  - File boundary (start or end)
-- **Fallback Position**: Whether to insert before or after the reference point when creating the heading
+**How it works:**
 
-**Example**: Set "Heading Text" to `Activity Log` with level `##`, and the plugin will:
-1. Search for a heading like `## Activity Log` (or `## Activity Log:`, case doesn't matter)
-2. Insert log entries at the end of that section
-3. If the heading doesn't exist, create it at your specified fallback position
+1. The plugin searches for a heading matching your specified level and text
+   - Example: With level `##` and text `Activity Log`, it finds `## Activity Log` (or `## Activity Log:`)
+2. If found, log entries are inserted **at the end of that section**
+3. If not found, the heading is created at the fallback location
+   - Example: With fallback "Last heading of level" and position "After", it creates the heading after the last `##` in the file
 
-#### Other Modes
+**Example Configuration:**
 
-- **First heading of level**: Insert at the first occurrence of a specific heading level
-- **Last heading of level**: Insert at the last occurrence of a specific heading level
-- **Whole file**: Insert at the start or end of the entire file
+```
+Heading Level: ##
+Heading Text: Log Items
+Fallback Reference: Last heading of level
+Fallback Position: After
+```
 
-**Note**: When using "heading by text" mode, entries are always inserted at the end of the found section to maintain chronological order.
+With this setup:
+- Entries go to the end of the `## Log Items` section if it exists
+- If the section doesn't exist, it's created after the last `##` heading in the file
+- Entries are always added chronologically at the end of the section
