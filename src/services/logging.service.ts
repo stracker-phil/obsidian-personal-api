@@ -3,7 +3,7 @@ import { DailyNoteService } from './dailyNote.service';
 import { CacheService } from './cache.service';
 import { LogResult, LogEntryOptions, LogEntrySource } from '../models/types';
 import { MarkdownUtils } from '../utils/markdown.utils';
-import { DEFAULT_SETTINGS, SectionPosition, SectionSelection } from '../models/settings.model';
+import { DEFAULT_SETTINGS } from '../models/settings.model';
 
 /**
  * Service for logging entries to daily notes
@@ -33,11 +33,10 @@ export class LoggingService {
 		this.cacheService = cacheService;
 		this.options = {
 			format: DEFAULT_SETTINGS.logEntryFormat,
-			sectionSelection: DEFAULT_SETTINGS.sectionSelection,
-			sectionPosition: DEFAULT_SETTINGS.sectionPosition,
 			sectionHeadingLevel: DEFAULT_SETTINGS.sectionHeadingLevel,
 			sectionHeadingText: DEFAULT_SETTINGS.sectionHeadingText,
 			fallbackReference: DEFAULT_SETTINGS.fallbackReference,
+			fallbackPosition: DEFAULT_SETTINGS.fallbackPosition,
 			source: LogEntrySource.API,
 			...options,
 		};
@@ -94,11 +93,10 @@ export class LoggingService {
 			// Find the insertion point
 			const insertPosition = MarkdownUtils.findInsertionPoint(
 				lines,
-				mergedOptions.sectionSelection as SectionSelection,
-				mergedOptions.sectionPosition as SectionPosition,
-				mergedOptions.sectionHeadingLevel,
-				mergedOptions.sectionHeadingText,
-				mergedOptions.fallbackReference,
+				mergedOptions.sectionHeadingLevel!,
+				mergedOptions.sectionHeadingText!,
+				mergedOptions.fallbackReference!,
+				mergedOptions.fallbackPosition!,
 			);
 
 			// Insert the entry

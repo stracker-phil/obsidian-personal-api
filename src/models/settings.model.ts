@@ -1,10 +1,5 @@
 /**
- * Section selection type
- */
-export type SectionSelection = 'heading-text' | 'first-heading' | 'last-heading' | 'file';
-
-/**
- * Position relative to reference point
+ * Position relative to fallback reference point (before or after)
  */
 export type SectionPosition = 'before' | 'after';
 
@@ -28,29 +23,24 @@ export interface PluginSettings {
 	manualLogEntryFormat: string;
 
 	/**
-	 * The heading level to identify sections (e.g., '#', '##')
+	 * The heading level to search for (e.g., '#', '##', '###')
 	 */
 	sectionHeadingLevel: string;
 
 	/**
-	 * Which section to insert the log entry into
-	 */
-	sectionSelection: SectionSelection;
-
-	/**
-	 * The text of the heading to find (only used when sectionSelection is 'heading-text')
+	 * The text of the heading to find (case-insensitive, punctuation trimmed)
 	 */
 	sectionHeadingText: string;
 
 	/**
-	 * Where to create the heading if it doesn't exist (only used when sectionSelection is 'heading-text')
+	 * Where to create the heading if it doesn't exist
 	 */
 	fallbackReference: FallbackReference;
 
 	/**
-	 * Position relative to the reference point
+	 * Position relative to the fallback reference (before or after)
 	 */
-	sectionPosition: SectionPosition;
+	fallbackPosition: SectionPosition;
 
 	/**
 	 * Key for storing cached entries in localStorage
@@ -65,9 +55,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	logEntryFormat: '- [x] {entry}',
 	manualLogEntryFormat: '- [x] {lastEntryTime} - {currentTime} {entry}',
 	sectionHeadingLevel: '##',
-	sectionSelection: 'heading-text',
 	sectionHeadingText: 'Log Items',
 	fallbackReference: 'last-heading',
-	sectionPosition: 'after',
+	fallbackPosition: 'after',
 	cacheKey: 'journalLogCache',
 };

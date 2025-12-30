@@ -3,15 +3,11 @@ import PersonalRestApiPlugin from '../main';
 import { SettingsService } from '../services/settings.service';
 import { LoggingService } from '../services/logging.service';
 import { PluginUtils } from '../utils/plugin.utils';
-import { FallbackReference, SectionPosition, SectionSelection } from '../models/settings.model';
+import { FallbackReference, SectionPosition } from '../models/settings.model';
 
 export class PersonalRestApiSettingTab extends PluginSettingTab {
 	private settingsService: SettingsService;
 	private loggingService: LoggingService;
-	private headingLevelSetting: Setting | null = null;
-	private headingTextSetting: Setting | null = null;
-	private fallbackReferenceSetting: Setting | null = null;
-	private positionSetting: Setting | null = null;
 
 	constructor(
 		app: App,
@@ -57,7 +53,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 			warningEl.style.fontWeight = 'bold';
 		}
 
-		statusEl.style.backgroundColor = '#f5f5f5';
+		statusEl.style.backgroundColor = 'var(--setting-items-background)';
 		statusEl.style.padding = '10px';
 		statusEl.style.borderRadius = '5px';
 		statusEl.style.marginBottom = '20px';
@@ -110,28 +106,18 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 
 		containerEl.createEl('h2', { text: 'Log Entry Placement' });
 
-		// Section selection dropdown
+		// Explanation
+		const explanationEl = containerEl.createEl('div', { cls: 'setting-item-description' });
+		explanationEl.style.marginBottom = '15px';
+		explanationEl.style.color = 'var(--text-muted)';
+		explanationEl.createEl('p', {
+			text: 'Log entries are inserted by searching for a specific heading. If the heading is found, entries are added at the end of that section. If not found, the heading is created at the fallback location.',
+		});
+
+		// Heading level selector
 		new Setting(containerEl)
-			.setName('Section Selection')
-			.setDesc('Which section to insert the log entry into')
-			.addDropdown(dropdown => dropdown
-				.addOption('heading-text', 'Specific heading by text')
-				.addOption('first-heading', 'First heading of level')
-				.addOption('last-heading', 'Last heading of level')
-				.addOption('file', 'Whole file')
-				.setValue(settings.sectionSelection)
-				.onChange(async (value: SectionSelection) => {
-					await this.settingsService.updateSettings({ sectionSelection: value });
-					this.loggingService.updateOptions({ sectionSelection: value });
-
-					// Dynamically show/hide settings based on selection
-					this.updateSettingsUi(value);
-				}));
-
-		// Create heading level setting
-		this.headingLevelSetting = new Setting(containerEl)
 			.setName('Heading Level')
-			.setDesc('Which heading level to use for section identification')
+			.setDesc('The heading level to search for (e.g., ##, ###)')
 			.addDropdown(dropdown => dropdown
 				.addOption('#', 'Level 1 (#)')
 				.addOption('##', 'Level 2 (##)')
@@ -143,8 +129,8 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 					this.loggingService.updateOptions({ sectionHeadingLevel: value });
 				}));
 
-		// Heading text input (for 'heading-text' mode)
-		this.headingTextSetting = new Setting(containerEl)
+		// Heading text input
+		new Setting(containerEl)
 			.setName('Heading Text')
 			.setDesc('The text of the heading to find (case-insensitive, punctuation is trimmed)')
 			.addText(text => text
@@ -155,80 +141,31 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 					this.loggingService.updateOptions({ sectionHeadingText: value });
 				}));
 
-		// Fallback reference (for 'heading-text' mode)
-		this.fallbackReferenceSetting = new Setting(containerEl)
-			.setName('Create Missing Heading After')
-			.setDesc('Where to create the heading if it doesn\'t exist in the daily note')
+		// Fallback reference
+		new Setting(containerEl)
+			.setName('Fallback Reference')
+			.setDesc('Where to create the heading if it doesn\'t exist')
 			.addDropdown(dropdown => dropdown
 				.addOption('first-heading', 'First heading of level')
 				.addOption('last-heading', 'Last heading of level')
-				.addOption('file', 'File boundary')
+				.addOption('file', 'File boundary (start or end)')
 				.setValue(settings.fallbackReference)
 				.onChange(async (value: FallbackReference) => {
 					await this.settingsService.updateSettings({ fallbackReference: value });
 					this.loggingService.updateOptions({ fallbackReference: value });
 				}));
 
-		// Position dropdown
-		this.positionSetting = new Setting(containerEl)
-			.setName('Position')
-			.setDesc('Position relative to the reference point')
+		// Fallback position
+		new Setting(containerEl)
+			.setName('Fallback Position')
+			.setDesc('Whether to insert before or after the fallback reference')
 			.addDropdown(dropdown => dropdown
 				.addOption('before', 'Before')
 				.addOption('after', 'After')
-				.setValue(settings.sectionPosition)
+				.setValue(settings.fallbackPosition)
 				.onChange(async (value: SectionPosition) => {
-					await this.settingsService.updateSettings({ sectionPosition: value });
-					this.loggingService.updateOptions({ sectionPosition: value });
+					await this.settingsService.updateSettings({ fallbackPosition: value });
+					this.loggingService.updateOptions({ fallbackPosition: value });
 				}));
-
-		// Set initial visibility
-		this.updateSettingsUi(settings.sectionSelection);
-	}
-
-	/**
-	 * Update the visibility and labels of settings based on section selection
-	 * @param sectionSelection The current section selection
-	 */
-	private updateSettingsUi(sectionSelection: SectionSelection): void {
-		const isHeadingText = sectionSelection === 'heading-text';
-		const isFile = sectionSelection === 'file';
-
-		// Heading level: show for all except 'file'
-		if (this.headingLevelSetting) {
-			this.headingLevelSetting.settingEl.style.display = isFile ? 'none' : '';
-		}
-
-		// Heading text: only show for 'heading-text'
-		if (this.headingTextSetting) {
-			this.headingTextSetting.settingEl.style.display = isHeadingText ? '' : 'none';
-		}
-
-		// Fallback reference: only show for 'heading-text'
-		if (this.fallbackReferenceSetting) {
-			this.fallbackReferenceSetting.settingEl.style.display = isHeadingText ? '' : 'none';
-		}
-
-		// Update position label contextually
-		this.updatePositionLabel(sectionSelection);
-	}
-
-	/**
-	 * Update the position setting label based on context
-	 * @param sectionSelection The current section selection
-	 */
-	private updatePositionLabel(sectionSelection: SectionSelection): void {
-		if (!this.positionSetting) return;
-
-		const nameEl = this.positionSetting.settingEl.querySelector('.setting-item-name');
-		const descEl = this.positionSetting.settingEl.querySelector('.setting-item-description');
-
-		if (sectionSelection === 'heading-text') {
-			if (nameEl) nameEl.textContent = 'Fallback Position';
-			if (descEl) descEl.textContent = 'Whether to insert before or after the reference point when creating the heading';
-		} else {
-			if (nameEl) nameEl.textContent = 'Position';
-			if (descEl) descEl.textContent = 'Position relative to the reference point';
-		}
 	}
 }

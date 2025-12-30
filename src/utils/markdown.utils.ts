@@ -1,5 +1,5 @@
 import { TimeUtils } from './time.utils';
-import { FallbackReference, SectionPosition, SectionSelection } from '../models/settings.model';
+import { FallbackReference, SectionPosition } from '../models/settings.model';
 
 /**
  * Internal position type for section/file insertion
@@ -221,68 +221,42 @@ export class MarkdownUtils {
 	}
 
 	/**
-	 * Find insertion point based on section selection, position, and heading level
+	 * Find insertion point by searching for a specific heading by text
 	 * @param lines File lines
-	 * @param sectionSelection Which section to use
-	 * @param sectionPosition Where relative to reference point
-	 * @param headingLevel Heading level for section detection
-	 * @param headingText Text of heading to find (for 'heading-text' mode)
-	 * @param fallbackReference Where to create heading if not found (for 'heading-text' mode)
+	 * @param headingLevel Heading level to search for (e.g., '##')
+	 * @param headingText Text of heading to find (case-insensitive, punctuation trimmed)
+	 * @param fallbackReference Where to create heading if not found
+	 * @param fallbackPosition Position relative to fallback reference (before or after)
 	 * @returns The line index to insert at
 	 */
 	static findInsertionPoint(
 		lines: string[],
-		sectionSelection: SectionSelection,
-		sectionPosition: SectionPosition,
-		headingLevel: string = '##',
-		headingText?: string,
-		fallbackReference?: FallbackReference,
+		headingLevel: string,
+		headingText: string,
+		fallbackReference: FallbackReference,
+		fallbackPosition: SectionPosition,
 	): number {
 		// Handle empty file case
 		if (lines.length === 0) {
 			return 0;
 		}
 
-		// Handle heading-text mode
-		if (sectionSelection === 'heading-text' && headingText) {
-			const headingLine = this.findHeadingByText(lines, headingLevel, headingText);
+		// Search for the heading
+		const headingLine = this.findHeadingByText(lines, headingLevel, headingText);
 
-			if (headingLine !== -1) {
-				// Heading found - ALWAYS insert at end of section
-				return this.findSectionInsertPoint(lines, headingLine, 'end');
-			} else {
-				// Heading not found - create it at fallback position
-				const fallback = fallbackReference || 'file';
-				const position = sectionPosition || 'after';
-				return this.insertHeadingAtFallback(
-					lines,
-					headingLevel,
-					headingText,
-					fallback,
-					position,
-				);
-			}
+		if (headingLine !== -1) {
+			// Heading found - ALWAYS insert at end of section
+			return this.findSectionInsertPoint(lines, headingLine, 'end');
+		} else {
+			// Heading not found - create it at fallback position
+			return this.insertHeadingAtFallback(
+				lines,
+				headingLevel,
+				headingText,
+				fallbackReference,
+				fallbackPosition,
+			);
 		}
-
-		// Handle file selection
-		if (sectionSelection === 'file') {
-			const filePos = sectionPosition === 'before' ? 'start' : 'end';
-			return this.findFileInsertPoint(lines, filePos);
-		}
-
-		// Handle first-heading/last-heading
-		const findLast = sectionSelection === 'last-heading';
-		const headingLine = this.findHeading(lines, headingLevel, findLast);
-
-		// If no heading found, fall back to file
-		if (headingLine === -1) {
-			const filePos = sectionPosition === 'before' ? 'start' : 'end';
-			return this.findFileInsertPoint(lines, filePos);
-		}
-
-		// Find insert point within section
-		const secPos = sectionPosition === 'before' ? 'start' : 'end';
-		return this.findSectionInsertPoint(lines, headingLine, secPos);
 	}
 
 	/**
