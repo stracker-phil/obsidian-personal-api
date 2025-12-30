@@ -6,7 +6,6 @@ import { PluginUtils } from '../utils/plugin.utils';
 import { SectionPosition, SectionSelection } from '../models/settings.model';
 
 export class PersonalRestApiSettingTab extends PluginSettingTab {
-	private plugin: PersonalRestApiPlugin;
 	private settingsService: SettingsService;
 	private loggingService: LoggingService;
 	private headingLevelSetting: Setting | null = null;
@@ -19,7 +18,6 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		loggingService: LoggingService,
 	) {
 		super(app, plugin);
-		this.plugin = plugin;
 		this.settingsService = settingsService;
 		this.loggingService = loggingService;
 	}

@@ -12,6 +12,7 @@ export class FileUtils {
 	 */
 	static async readFileAsLines(app: App, file: TFile): Promise<string[]> {
 		const content = await app.vault.read(file);
+
 		return content.split('\n');
 	}
 
