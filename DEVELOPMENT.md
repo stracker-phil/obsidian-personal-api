@@ -5,6 +5,15 @@
 1. `npm install`
 2. `npm run dev`
 
+### Symlink to Sandbox
+
+Create a symlink from the dist folder to the Sandbox vault:
+
+```
+cd ~/path/to/Sandbox/.obsidian/plugins
+ln -s ~/code/this-plugin/dist this-plugin
+```
+
 ## NPM Scripts
 
 ### `npm run dev`
@@ -12,6 +21,11 @@
 Starts a development server and watches for changes.
 
 Output of the dev plugin is in `dist/` folder.
+
+**Testing the changes**
+
+- Open the Sandbox vault in Obsidian (make sure the symlink is set up - see above)
+- After every change, disable and re-enable the plugin in Obsidian settings to apply changes
 
 ### `npm run version`
 
