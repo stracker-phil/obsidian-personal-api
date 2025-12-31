@@ -1,12 +1,15 @@
 /**
- * Position relative to fallback reference point (before or after)
+ * Unified position for where to insert heading if not found
+ * Keys are static - interpretation depends on heading level:
+ * - For ##: first/second/last-section means "after Nth ## sibling"
+ * - For ### and ####: first/second/last-section means "end of Nth parent section"
  */
-export type SectionPosition = 'before' | 'after';
-
-/**
- * Fallback reference point when heading is not found
- */
-export type FallbackReference = 'first-heading' | 'last-heading' | 'file';
+export type HeadingInsertPosition =
+	| 'file-start'
+	| 'first-section'
+	| 'second-section'
+	| 'last-section'
+	| 'file-end';
 
 /**
  * Plugin settings
@@ -33,14 +36,9 @@ export interface PluginSettings {
 	sectionHeadingText: string;
 
 	/**
-	 * Where to create the heading if it doesn't exist
+	 * Where to insert the heading if it doesn't exist
 	 */
-	fallbackReference: FallbackReference;
-
-	/**
-	 * Position relative to the fallback reference (before or after)
-	 */
-	fallbackPosition: SectionPosition;
+	headingInsertPosition: HeadingInsertPosition;
 
 	/**
 	 * Key for storing cached entries in localStorage
@@ -56,7 +54,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	manualLogEntryFormat: '- [x] {lastEntryTime} - {currentTime} {entry}',
 	sectionHeadingLevel: '##',
 	sectionHeadingText: 'Log Items',
-	fallbackReference: 'last-heading',
-	fallbackPosition: 'after',
+	headingInsertPosition: 'last-section',
 	cacheKey: 'journalLogCache',
 };

@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, SettingGroup } from 'obsidian';
 import PersonalRestApiPlugin from '../main';
-import { FallbackReference, SectionPosition } from '../models/settings.model';
+import { HeadingInsertPosition } from '../models/settings.model';
 import { LoggingService } from '../services/logging.service';
 import { SettingsService } from '../services/settings.service';
 import { PluginUtils } from '../utils/plugin.utils';
@@ -55,7 +55,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 
 		endpointLog.setHeading('Log Endpoint');
 		endpointLog.addSetting((setting) =>
-			setting.setName('Adds a new log-entry to the current daily note')
+			setting.setName('Adds a new log-entry to the current daily note'),
 		);
 		endpointLog.addSetting((setting) => {
 			const port = restApiStatus?.inst?.settings?.port || 27124;
@@ -152,46 +152,33 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 					})),
 		);
 
-		// Fallback reference
+		// Heading insert position
 		groupPlacement.addSetting((setting) => {
-			const options = {
-				'first-heading': `First ${settings.sectionHeadingLevel} heading`,
-				'last-heading': `Last ${settings.sectionHeadingLevel} heading`,
-				'file': 'File boundary (start or end)',
+			const headingLevel = settings.sectionHeadingLevel;
+			const isH2 = headingLevel === '##';
+			const parentLevel = isH2 ? '##' : headingLevel.substring(0, headingLevel.length - 1);
+			const options: Record<HeadingInsertPosition, string> = {
+				'file-start': 'Start of file',
+				'first-section': `End of first ${parentLevel} section`,
+				'second-section': `End of second ${parentLevel} section`,
+				'last-section': `End of last ${parentLevel} section`,
+				'file-end': 'End of file',
 			};
 
-			setting.setName('Insert Header Reference')
-				.setDesc('Where to create the heading if it doesn\'t exist')
-				.addDropdown(dropdown => dropdown
-					.addOptions(options)
-					.setValue(settings.fallbackReference)
-					.onChange(async (value: FallbackReference) => {
-						await this.settingsService.updateSettings({ fallbackReference: value });
-						this.loggingService.updateOptions({ fallbackReference: value });
-						this.display();
-					}));
-		});
-
-		// Fallback position
-		groupPlacement.addSetting((setting) => {
-			const options = {
-				before: 'Before heading',
-				after: 'After heading',
-			};
-
-			if (settings.fallbackReference === 'file') {
-				options.before = 'Start of the file';
-				options.after = 'End of the file';
+			if (isH2) {
+				options['first-section'] = 'After first ## section';
+				options['second-section'] = 'After second ## section';
+				options['last-section'] = 'After last ## section';
 			}
 
 			setting.setName('Insert Header Position')
-				.setDesc('Whether to insert before or after the above reference line')
+				.setDesc('Where to create the heading if it doesn\'t exist')
 				.addDropdown(dropdown => dropdown
 					.addOptions(options)
-					.setValue(settings.fallbackPosition)
-					.onChange(async (value: SectionPosition) => {
-						await this.settingsService.updateSettings({ fallbackPosition: value });
-						this.loggingService.updateOptions({ fallbackPosition: value });
+					.setValue(settings.headingInsertPosition)
+					.onChange(async (value: HeadingInsertPosition) => {
+						await this.settingsService.updateSettings({ headingInsertPosition: value });
+						this.loggingService.updateOptions({ headingInsertPosition: value });
 					}));
 		});
 	}

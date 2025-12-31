@@ -1,5 +1,5 @@
 import { TimeUtils } from './time.utils';
-import { FallbackReference, SectionPosition } from '../models/settings.model';
+import { HeadingInsertPosition } from '../models/settings.model';
 
 /**
  * Internal position type for section/file insertion
@@ -7,9 +7,28 @@ import { FallbackReference, SectionPosition } from '../models/settings.model';
 type InternalPosition = 'start' | 'end';
 
 /**
+ * Internal reference type (extracted from HeadingInsertPosition)
+ */
+type InternalReference = 'first-heading' | 'last-heading' | 'file';
+
+/**
+ * Internal position relative to reference (extracted from HeadingInsertPosition)
+ */
+type InternalRelativePosition = 'before' | 'after';
+
+/**
  * Utilities for Markdown-specific operations
  */
 export class MarkdownUtils {
+	/**
+	 * Get parent heading level (e.g., ### -> ##, #### -> ###)
+	 * @param headingLevel The current heading level
+	 * @returns The parent heading level
+	 */
+	private static getParentLevel(headingLevel: string): string {
+		return headingLevel.slice(0, -1);
+	}
+
 	/**
 	 * Find a heading of specified level
 	 * @param lines File lines
@@ -26,6 +45,26 @@ export class MarkdownUtils {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Find the nth heading of specified level (1-indexed)
+	 * @param lines File lines
+	 * @param headingLevel The heading level to search for (e.g., '##')
+	 * @param index The 1-based index (1 = first, 2 = second, etc.)
+	 * @returns The line index of the heading, or -1 if not found
+	 */
+	static findNthHeading(lines: string[], headingLevel: string, index: number): number {
+		let count = 0;
+		for (let i = 0; i < lines.length; i++) {
+			if (lines[i].startsWith(`${headingLevel} `)) {
+				count++;
+				if (count === index) {
+					return i;
+				}
+			}
+		}
+		return -1;
 	}
 
 	/**
@@ -82,37 +121,66 @@ export class MarkdownUtils {
 	 * @param lines File lines (will be modified)
 	 * @param headingLevel The heading level to create
 	 * @param headingText The heading text
-	 * @param fallbackReference Where to position the heading
-	 * @param position Before or after the reference point
+	 * @param headingInsertPosition Where to position the heading
 	 * @returns The line index where content should be inserted (after the new heading)
 	 */
 	static insertHeadingAtFallback(
 		lines: string[],
 		headingLevel: string,
 		headingText: string,
-		fallbackReference: FallbackReference,
-		position: SectionPosition,
+		headingInsertPosition: HeadingInsertPosition,
 	): number {
 		const newHeading = `${headingLevel} ${headingText}`;
 		let insertLine: number;
 
-		if (fallbackReference === 'file') {
-			// Insert at start or end of file
-			if (position === 'before') {
-				insertLine = this.findFileInsertPoint(lines, 'start');
-			} else {
-				insertLine = this.findFileInsertPoint(lines, 'end');
-			}
-		} else {
-			// Find reference heading
-			const findLast = fallbackReference === 'last-heading';
-			const refHeading = this.findHeading(lines, headingLevel, findLast);
+		// Determine the level to search for sections
+		// For ##: search for ## sections
+		// For ### and ####: search for parent (## or ###) sections
+		const sectionLevel = headingLevel === '##' ? headingLevel : this.getParentLevel(headingLevel);
 
-			if (refHeading === -1) {
-				// No reference heading found, fall back to end of file
-				insertLine = lines.length;
-			} else {
-				insertLine = position === 'before' ? refHeading : refHeading + 1;
+		switch (headingInsertPosition) {
+			case 'file-start':
+				insertLine = this.findFileInsertPoint(lines, 'start');
+				break;
+
+			case 'file-end':
+				insertLine = this.findFileInsertPoint(lines, 'end');
+				break;
+
+			case 'first-section': {
+				// Find first section and insert at end of its content
+				const sectionHeading = this.findNthHeading(lines, sectionLevel, 1);
+
+				if (sectionHeading === -1) {
+					insertLine = lines.length;
+				} else {
+					insertLine = this.findSectionInsertPoint(lines, sectionHeading, 'end');
+				}
+				break;
+			}
+
+			case 'second-section': {
+				// Find second section and insert at end of its content
+				const sectionHeading = this.findNthHeading(lines, sectionLevel, 2);
+
+				if (sectionHeading === -1) {
+					insertLine = lines.length;
+				} else {
+					insertLine = this.findSectionInsertPoint(lines, sectionHeading, 'end');
+				}
+				break;
+			}
+
+			case 'last-section': {
+				// Find last section and insert at end of its content
+				const sectionHeading = this.findHeading(lines, sectionLevel, true);
+
+				if (sectionHeading === -1) {
+					insertLine = lines.length;
+				} else {
+					insertLine = this.findSectionInsertPoint(lines, sectionHeading, 'end');
+				}
+				break;
 			}
 		}
 
@@ -230,16 +298,14 @@ export class MarkdownUtils {
 	 * @param lines File lines
 	 * @param headingLevel Heading level to search for (e.g., '##')
 	 * @param headingText Text of heading to find (case-insensitive, punctuation trimmed)
-	 * @param fallbackReference Where to create heading if not found
-	 * @param fallbackPosition Position relative to fallback reference (before or after)
+	 * @param headingInsertPosition Where to create heading if not found
 	 * @returns The line index to insert at
 	 */
 	static findInsertionPoint(
 		lines: string[],
 		headingLevel: string,
 		headingText: string,
-		fallbackReference: FallbackReference,
-		fallbackPosition: SectionPosition,
+		headingInsertPosition: HeadingInsertPosition,
 	): number {
 		// Handle empty file case
 		if (lines.length === 0) {
@@ -258,8 +324,7 @@ export class MarkdownUtils {
 				lines,
 				headingLevel,
 				headingText,
-				fallbackReference,
-				fallbackPosition,
+				headingInsertPosition,
 			);
 		}
 	}

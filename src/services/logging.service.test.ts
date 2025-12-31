@@ -61,8 +61,7 @@ describe('LoggingService', () => {
 				format: '- [x] {entry}',
 				sectionHeadingLevel: '##',
 				sectionHeadingText: 'Log Items',
-				fallbackReference: 'last-heading',
-				fallbackPosition: 'after',
+				headingInsertPosition: 'last-section',
 			},
 		);
 	});
@@ -181,15 +180,14 @@ describe('LoggingService', () => {
 		it('should merge custom options with defaults', async () => {
 			await loggingService.addLogEntry('Test', {
 				sectionHeadingText: 'Custom Section',
-				fallbackReference: 'first-heading',
+				headingInsertPosition: 'first-section',
 			});
 
 			expect(MarkdownUtils.findInsertionPoint).toHaveBeenCalledWith(
 				expect.any(Array),
 				'##', // default
 				'Custom Section', // overridden
-				'first-heading', // overridden
-				'after', // default
+				'first-section', // overridden
 			);
 		});
 
@@ -405,7 +403,7 @@ describe('LoggingService', () => {
 
 			loggingService.updateOptions({
 				sectionHeadingText: 'Updated Section',
-				fallbackReference: 'first-heading',
+				headingInsertPosition: 'first-section',
 			});
 
 			await loggingService.addLogEntry('Test');
@@ -414,8 +412,7 @@ describe('LoggingService', () => {
 				expect.any(Array),
 				'##', // unchanged
 				'Updated Section', // updated
-				'first-heading', // updated
-				'after', // unchanged
+				'first-section', // updated
 			);
 		});
 

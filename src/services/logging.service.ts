@@ -35,8 +35,7 @@ export class LoggingService {
 			format: DEFAULT_SETTINGS.logEntryFormat,
 			sectionHeadingLevel: DEFAULT_SETTINGS.sectionHeadingLevel,
 			sectionHeadingText: DEFAULT_SETTINGS.sectionHeadingText,
-			fallbackReference: DEFAULT_SETTINGS.fallbackReference,
-			fallbackPosition: DEFAULT_SETTINGS.fallbackPosition,
+			headingInsertPosition: DEFAULT_SETTINGS.headingInsertPosition,
 			source: LogEntrySource.API,
 			...options,
 		};
@@ -95,8 +94,7 @@ export class LoggingService {
 				lines,
 				mergedOptions.sectionHeadingLevel!,
 				mergedOptions.sectionHeadingText!,
-				mergedOptions.fallbackReference!,
-				mergedOptions.fallbackPosition!,
+				mergedOptions.headingInsertPosition!,
 			);
 
 			// Insert the entry

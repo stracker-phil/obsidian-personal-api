@@ -55,8 +55,7 @@ export default class PersonalRestApiPlugin extends Plugin {
 				format: settings.logEntryFormat,
 				sectionHeadingLevel: settings.sectionHeadingLevel,
 				sectionHeadingText: settings.sectionHeadingText,
-				fallbackReference: settings.fallbackReference,
-				fallbackPosition: settings.fallbackPosition,
+				headingInsertPosition: settings.headingInsertPosition,
 			},
 		);
 

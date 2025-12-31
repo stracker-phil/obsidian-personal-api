@@ -159,8 +159,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(2); // After "- old entry"
 			expect(lines).toEqual(['## Log Items', '- old entry']); // No modification
@@ -177,8 +176,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(2);
 		});
@@ -194,8 +192,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Activity Log',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(2);
 		});
@@ -211,8 +208,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(1); // After heading, before blank line
 		});
@@ -228,8 +224,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(2); // After "- entry"
 		});
@@ -245,8 +240,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(4); // After "- entry"
 		});
@@ -262,8 +256,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(3); // After "- entry", before "### Sub"
 		});
@@ -281,8 +274,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'first-heading',
-				'before',
+				'file-start',
 			);
 			expect(lines[0]).toBe('## Log Items');
 			expect(lines[1]).toBe('');
@@ -295,39 +287,41 @@ describe('MarkdownUtils', () => {
 		 * When: Finding insertion point with fallback "first-heading" and position "after"
 		 * Then: Creates "## Log Items" after "## Section A" heading and returns insert position
 		 */
-		it('should create heading after first heading when fallback is first-heading/after', () => {
+		it('should create heading at end of first section', () => {
 			const lines = ['## Section A', 'text', '## Section B'];
 			const result = MarkdownUtils.findInsertionPoint(
 				lines,
 				'##',
 				'Log Items',
-				'first-heading',
-				'after',
+				'first-section',
 			);
-			expect(lines[1]).toBe('');
-			expect(lines[2]).toBe('## Log Items');
-			expect(lines[3]).toBe('');
-			expect(result).toBe(4); // Position after created heading
+			// Inserts at end of "## Section A" section (after "text", before "## Section B")
+			expect(lines[1]).toBe('text');
+			expect(lines[2]).toBe('');
+			expect(lines[3]).toBe('## Log Items');
+			expect(lines[4]).toBe('');
+			expect(lines[5]).toBe('## Section B');
+			expect(result).toBe(5);
 		});
 
 		/*
 		 * Given: A daily note with "## Section A" and "## Section B", no "## Log Items"
-		 * When: Finding insertion point with fallback "last-heading" and position "before"
-		 * Then: Creates "## Log Items" before "## Section B" and returns insert position
+		 * When: Finding insertion point with fallback "after-last-sibling"
+		 * Then: Creates "## Log Items" after "## Section B" and returns insert position
 		 */
-		it('should create heading before last heading when fallback is last-heading/before', () => {
+		it('should create heading after last sibling when fallback is after-last-sibling', () => {
 			const lines = ['## Section A', 'text', '## Section B'];
 			const result = MarkdownUtils.findInsertionPoint(
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'before',
+				'last-section',
 			);
-			expect(lines[2]).toBe('');
-			expect(lines[3]).toBe('## Log Items');
-			expect(lines[4]).toBe('');
-			expect(result).toBe(5); // Position after created heading
+			expect(lines[2]).toBe('## Section B');
+			expect(lines[3]).toBe('');
+			expect(lines[4]).toBe('## Log Items');
+			expect(lines[5]).toBe('');
+			expect(result).toBe(6); // Position after created heading
 		});
 
 		/*
@@ -341,8 +335,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(lines[3]).toBe('');
 			expect(lines[4]).toBe('## Log Items');
@@ -361,8 +354,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'file',
-				'before',
+				'file-start',
 			);
 			expect(lines[0]).toBe('## Log Items');
 			expect(lines[1]).toBe('');
@@ -380,13 +372,173 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'file',
-				'after',
+				'file-end',
 			);
 			expect(lines[2]).toBe('');
 			expect(lines[3]).toBe('## Log Items');
 			expect(lines[4]).toBe('');
 			expect(result).toBe(5); // Position after created heading
+		});
+	});
+
+	describe('findInsertionPoint - Second Sibling/Parent Positioning', () => {
+		/*
+		 * Given: A daily note with 3+ ## headings, no "## Log Items"
+		 * When: Finding insertion point with fallback "after-second-sibling"
+		 * Then: Creates "## Log Items" after second ## heading
+		 */
+		it('should create heading after second sibling when multiple siblings exist', () => {
+			const lines = ['## Section A', 'text', '## Section B', 'more', '## Section C'];
+			const result = MarkdownUtils.findInsertionPoint(
+				lines,
+				'##',
+				'Log Items',
+				'second-section',
+			);
+			// Inserts at end of "## Section B" section (after "more", before "## Section C")
+			expect(lines[3]).toBe('more');
+			expect(lines[4]).toBe('');
+			expect(lines[5]).toBe('## Log Items');
+			expect(lines[6]).toBe('');
+			expect(lines[7]).toBe('## Section C');
+			expect(result).toBe(7);
+		});
+
+		/*
+		 * Given: A daily note with only 1 ## heading, no "## Log Items"
+		 * When: Finding insertion point with fallback "after-second-sibling"
+		 * Then: Falls back to end of file (second heading doesn't exist)
+		 */
+		it('should fallback to end of file when second sibling does not exist', () => {
+			const lines = ['## Section A', 'text'];
+			const result = MarkdownUtils.findInsertionPoint(
+				lines,
+				'##',
+				'Log Items',
+				'second-section',
+			);
+			expect(lines[2]).toBe('');
+			expect(lines[3]).toBe('## Log Items');
+			expect(lines[4]).toBe('');
+			expect(result).toBe(5);
+		});
+
+		/*
+		 * Given: A daily note with no ## headings
+		 * When: Finding insertion point with fallback "after-second-sibling"
+		 * Then: Falls back to end of file
+		 */
+		it('should fallback to end of file when no siblings exist', () => {
+			const lines = ['Some content'];
+			const result = MarkdownUtils.findInsertionPoint(
+				lines,
+				'##',
+				'Log Items',
+				'second-section',
+			);
+			expect(lines[1]).toBe('');
+			expect(lines[2]).toBe('## Log Items');
+			expect(result).toBe(4);
+		});
+
+		/*
+		 * Given: A daily note with multiple ## sections, looking for ### heading
+		 * When: Finding insertion point with fallback "end-of-second-parent"
+		 * Then: Creates ### heading at end of second ## section
+		 */
+		it('should create heading at end of second parent section when multiple parents exist', () => {
+			const lines = [
+				'## Parent A',
+				'content',
+				'## Parent B',
+				'more content',
+				'## Parent C',
+			];
+			const result = MarkdownUtils.findInsertionPoint(
+				lines,
+				'###',
+				'Details',
+				'second-section',
+			);
+			// Should insert at end of "## Parent B" section (after "more content", before "## Parent C")
+			expect(lines[3]).toBe('more content');
+			expect(lines[4]).toBe('');
+			expect(lines[5]).toBe('### Details');
+			expect(lines[6]).toBe('');
+			expect(result).toBe(7);
+		});
+
+		/*
+		 * Given: A daily note with only 1 ## section, looking for ### heading
+		 * When: Finding insertion point with fallback "end-of-second-parent"
+		 * Then: Falls back to end of file (second parent doesn't exist)
+		 */
+		it('should fallback to end of file when second parent does not exist', () => {
+			const lines = ['## Parent A', 'content'];
+			const result = MarkdownUtils.findInsertionPoint(
+				lines,
+				'###',
+				'Details',
+				'second-section',
+			);
+			expect(lines[2]).toBe('');
+			expect(lines[3]).toBe('### Details');
+			expect(result).toBe(5);
+		});
+	});
+
+	describe('findInsertionPoint - Robust Fallback Scenarios', () => {
+		/*
+		 * Given: A daily note with only # heading (title), looking for ### heading
+		 * When: Finding insertion point with fallback "end-of-first-parent"
+		 * Then: Falls back to end of file (no ## parent exists for ###)
+		 */
+		it('should fallback to end of file when parent level does not exist', () => {
+			const lines = ['# My Daily Note', 'Some content'];
+			const result = MarkdownUtils.findInsertionPoint(
+				lines,
+				'###',
+				'Details',
+				'first-section',
+			);
+			expect(lines[2]).toBe('');
+			expect(lines[3]).toBe('### Details');
+			expect(result).toBe(5);
+		});
+
+		/*
+		 * Given: An empty daily note
+		 * When: Finding insertion point
+		 * Then: Returns 0 (empty file special case - no heading created)
+		 */
+		it('should return 0 for empty file without creating heading', () => {
+			const lines: string[] = [];
+			const result = MarkdownUtils.findInsertionPoint(
+				lines,
+				'##',
+				'Log Items',
+				'first-section',
+			);
+			expect(lines.length).toBe(0); // No modification
+			expect(result).toBe(0);
+		});
+
+		/*
+		 * Given: A note with only #### headings, looking for #### with ### parent
+		 * When: Finding insertion point with fallback "end-of-last-parent"
+		 * Then: Falls back to end of file (no ### parent exists)
+		 */
+		it('should fallback when looking for #### but only #### exists (no ### parent)', () => {
+			const lines = ['#### Detail A', 'text', '#### Detail B'];
+			const result = MarkdownUtils.findInsertionPoint(
+				lines,
+				'####',
+				'New Detail',
+				'last-section',
+			);
+			expect(lines[3]).toBe('');
+			expect(lines[4]).toBe('#### New Detail');
+			expect(result).toBe(6);
 		});
 	});
 
@@ -402,8 +554,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(0);
 		});
@@ -419,8 +570,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'file',
-				'before',
+				'file-start',
 			);
 			expect(lines[4]).toBe('## Log Items');
 			expect(result).toBe(6); // Position after created heading
@@ -437,8 +587,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'file',
-				'before',
+				'file-start',
 			);
 			expect(lines[4]).toBe(''); // Blank line before heading
 			expect(lines[5]).toBe('## Log Items');
@@ -458,8 +607,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			// No ## heading found, should create at end of file
 			expect(lines[3]).toBe('');
@@ -478,8 +626,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(4); // After "text"
 		});
@@ -495,8 +642,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'last-heading',
-				'after',
+				'last-section',
 			);
 			expect(result).toBe(5); // After "text"
 		});
@@ -512,8 +658,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'file',
-				'before',
+				'file-start',
 			);
 			expect(lines[0]).toBe('## Log Items');
 			expect(lines[1]).toBe('');
@@ -532,8 +677,7 @@ describe('MarkdownUtils', () => {
 				lines,
 				'##',
 				'Log Items',
-				'file',
-				'after',
+				'file-end',
 			);
 			expect(lines[2]).toBe(''); // Blank line before heading
 			expect(lines[3]).toBe('## Log Items');
