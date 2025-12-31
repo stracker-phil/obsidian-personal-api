@@ -8,6 +8,7 @@ export interface PluginInstance<T> {
 export interface PluginStatus {
 	isActive: boolean;
 	name: string;
+	inst?: any;
 	error?: string;
 }
 
@@ -54,6 +55,7 @@ export class PluginUtils {
 			if ((app as any).internalPlugins?.plugins[pluginId]?.enabled) {
 				return {
 					isActive: true,
+					inst: (app as any).internalPlugins?.plugins[pluginId],
 					name: pluginId,
 				};
 			}
@@ -63,6 +65,7 @@ export class PluginUtils {
 			if (plugins && plugins[pluginId]) {
 				return {
 					isActive: true,
+					inst: plugins[pluginId],
 					name: plugins[pluginId].manifest?.name || pluginId,
 				};
 			}

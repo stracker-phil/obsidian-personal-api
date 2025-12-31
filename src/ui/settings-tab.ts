@@ -51,27 +51,46 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 			});
 		}
 
-		const groupFormat = new SettingGroup(containerEl);
+		const endpointLog = new SettingGroup(containerEl);
 
-		groupFormat.setHeading('Log Entry Format');
+		endpointLog.setHeading('Log Endpoint');
+		endpointLog.addSetting((setting) =>
+			setting.setName('Adds a new log-entry to the current daily note')
+		);
+		endpointLog.addSetting((setting) => {
+			const port = restApiStatus?.inst?.settings?.port || 27124;
+			const desc = new DocumentFragment();
+			const infos = desc.createEl('ul');
+
+			addInfoItem(infos, 'Method', 'GET');
+			addInfoItem(infos, 'Endpoint', '/log');
+			addInfoItem(infos, 'Param', 'log', 'required');
+			addInfoItem(infos, 'Sample', '', `GET https://localhost:${port}/log?log=Your+log+entry+here`);
+
+			setting.setName('REST API details:').setDesc(desc);
+		});
+		endpointLog.addSetting((setting) => {
+			const desc = new DocumentFragment();
+			const infos = desc.createEl('ul');
+
+			addInfoItem(infos, 'Command', 'Add log entry');
+
+			setting.setName('Command palette details:').setDesc(desc);
+		});
+
+		const groupFormat = new SettingGroup(containerEl);
+		groupFormat.setHeading('Log: Format');
 
 		groupFormat.addSetting((setting) => {
 			const desc = new DocumentFragment();
-			const variablesList = desc.createEl('ul');
-			variablesList.createEl('li', {
-				text: '{entry} - The actual log entry text (required)',
-			});
-			variablesList.createEl('li', {
-				text: '{currentTime} - Current time in 24-hour format (HH:MM)',
-			});
-			variablesList.createEl('li', {
-				text: '{lastEntryTime} - Time of the last log entry in 24-hour format (HH:MM)',
-			});
+			const variables = desc.createEl('ul');
+			addCodeItem(variables, '{entry}', 'The actual log entry text (required)');
+			addCodeItem(variables, '{currentTime}', 'Current time in 24-hour format (HH:MM)');
+			addCodeItem(variables, '{lastEntryTime}', 'Time of the last log entry in 24-hour format (HH:MM)');
 
 			setting.setName('Available variables for log entry formats:')
 				.setDesc(desc);
 		});
-
 
 		groupFormat.addSetting((setting) =>
 			setting.setName('API Entry Format')
@@ -99,7 +118,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 
 		const groupPlacement = new SettingGroup(containerEl);
 
-		groupPlacement.setHeading('Log Entry Placement');
+		groupPlacement.setHeading('Log: Placement');
 
 		groupPlacement.addSetting((setting) => {
 			const options = {
@@ -177,4 +196,29 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 					}));
 		});
 	}
+}
+
+function addInfoItem(list: HTMLElement, label: string, value: string, description: string = '') {
+	const item = list.createEl('li');
+	item.createEl('span', { text: label });
+	item.createEl('span', { text: ': ' });
+
+	if (value) {
+		item.createEl('strong', { text: value });
+
+		if (description) {
+			item.createEl('span', { text: ' - ' });
+		}
+	}
+
+	if (description) {
+		item.createEl('span', { text: description });
+	}
+}
+
+function addCodeItem(list: HTMLElement, label: string, description: string) {
+	const item = list.createEl('li');
+	item.createEl('code', { text: label });
+	item.createEl('span', { text: ' - ' });
+	item.createEl('span', { text: description });
 }
