@@ -116,11 +116,16 @@ export class MarkdownUtils {
 			}
 		}
 
-		// Insert the heading and a blank line
-		lines.splice(insertLine, 0, newHeading, '');
-
-		// Return position after heading and blank line (where content should go)
-		return insertLine + 2;
+		// Insert the heading with appropriate spacing
+		if (insertLine === 0) {
+			// At beginning of file - no blank line before
+			lines.splice(insertLine, 0, newHeading, '');
+			return insertLine + 2;
+		} else {
+			// Not at beginning - add blank line before heading
+			lines.splice(insertLine, 0, '', newHeading, '');
+			return insertLine + 3;
+		}
 	}
 
 	/**
