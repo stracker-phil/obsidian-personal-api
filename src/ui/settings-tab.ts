@@ -122,7 +122,6 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 
 		groupPlacement.addSetting((setting) => {
 			const options = {
-				'#': 'Level 1 (#)',
 				'##': 'Level 2 (##)',
 				'###': 'Level 3 (###)',
 				'####': 'Level 4 (####)',
