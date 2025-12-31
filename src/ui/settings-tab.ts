@@ -31,20 +31,21 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		// Plugin dependency status
 		const restApiStatus = PluginUtils.isPluginActive(this.app, 'obsidian-local-rest-api');
 		const dailyNotesStatus = PluginUtils.isPluginActive(this.app, 'daily-notes');
+		const restApiInst = PluginUtils.getPlugin<any>(this.app, 'obsidian-local-rest-api');
 
 		const statusEl = containerEl.createEl('div', { cls: 'plugin-status-container' });
 
 		statusEl.createEl('div', {
-			text: `${restApiStatus.isActive ? '✅' : '❌'} Local REST API plugin is ${restApiStatus.isActive ? 'active' : 'not active'}`,
-			cls: restApiStatus.isActive ? 'status-ok' : 'status-error',
+			text: `${restApiStatus ? '✅' : '❌'} Local REST API plugin is ${restApiStatus ? 'active' : 'not active'}`,
+			cls: restApiStatus ? 'status-ok' : 'status-error',
 		});
 
 		statusEl.createEl('div', {
-			text: `${dailyNotesStatus.isActive ? '✅' : '❌'} Daily Notes plugin is ${dailyNotesStatus.isActive ? 'active' : 'not active'}`,
-			cls: dailyNotesStatus.isActive ? 'status-ok' : 'status-error',
+			text: `${dailyNotesStatus ? '✅' : '❌'} Daily Notes plugin is ${dailyNotesStatus ? 'active' : 'not active'}`,
+			cls: dailyNotesStatus ? 'status-ok' : 'status-error',
 		});
 
-		if (!restApiStatus.isActive || !dailyNotesStatus.isActive) {
+		if (!restApiStatus || !dailyNotesStatus) {
 			statusEl.createEl('div', {
 				text: 'Warning: The log endpoint requires both plugins to be active.',
 				cls: 'status-warning',
@@ -58,7 +59,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 			setting.setName('Adds a new log-entry to the current daily note'),
 		);
 		endpointLog.addSetting((setting) => {
-			const port = restApiStatus?.inst?.settings?.port || 27124;
+			const port = restApiInst.instance?.settings?.port || 27124;
 			const desc = new DocumentFragment();
 			const infos = desc.createEl('ul');
 

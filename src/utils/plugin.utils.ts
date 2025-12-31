@@ -2,39 +2,37 @@ import { App } from 'obsidian';
 
 export interface PluginInstance<T> {
 	instance: T | null;
-	error?: string;
-}
-
-export interface PluginStatus {
-	isActive: boolean;
-	name: string;
-	inst?: any;
+	enabled?: boolean;
 	error?: string;
 }
 
 /**
- * Utilities for accessing Obsidian plugins
+ * Utilities for accessing other Obsidian plugins.
  */
 export class PluginUtils {
-	/**
-	 * Safely access another plugin installed in Obsidian
-	 * @param app The Obsidian App instance
-	 * @param pluginId The ID of the plugin to access
-	 * @returns Object containing either the plugin instance or an error
-	 */
 	static getPlugin<T>(app: App, pluginId: string): PluginInstance<T> {
 		try {
-			const plugins = (app as any).plugins.plugins;
-			const instance = plugins[pluginId] as T;
+			const internalPlugin = (app as any).internalPlugins?.plugins[pluginId];
+			const customPlugin = (app as any).plugins.plugins[pluginId];
 
-			if (!instance) {
+			if (internalPlugin) {
 				return {
-					instance: null,
-					error: `Plugin '${pluginId}' not found`,
+					instance: internalPlugin.instance as T,
+					enabled: internalPlugin.enabled,
 				};
 			}
 
-			return { instance };
+			if (customPlugin) {
+				return {
+					instance: customPlugin as T,
+					enabled: true,
+				};
+			}
+
+			return {
+				instance: null,
+				error: `Plugin '${pluginId}' not found`,
+			};
 		} catch (error) {
 			return {
 				instance: null,
@@ -43,44 +41,13 @@ export class PluginUtils {
 		}
 	}
 
-	/**
-	 * Check if a plugin is active
-	 * @param app The Obsidian App instance
-	 * @param pluginId The ID of the plugin to check
-	 * @returns Status of the plugin including if it's active
-	 */
-	static isPluginActive(app: App, pluginId: string): PluginStatus {
-		try {
-			// Check if it's an internal plugin
-			if ((app as any).internalPlugins?.plugins[pluginId]?.enabled) {
-				return {
-					isActive: true,
-					inst: (app as any).internalPlugins?.plugins[pluginId],
-					name: pluginId,
-				};
-			}
+	static isPluginActive(app: App, pluginId: string): boolean {
+		const plugin = PluginUtils.getPlugin<any>(app, pluginId);
 
-			// Check if it's a community plugin
-			const plugins = (app as any).plugins?.plugins;
-			if (plugins && plugins[pluginId]) {
-				return {
-					isActive: true,
-					inst: plugins[pluginId],
-					name: plugins[pluginId].manifest?.name || pluginId,
-				};
-			}
-
-			return {
-				isActive: false,
-				name: pluginId,
-				error: 'Plugin not found or not enabled',
-			};
-		} catch (error) {
-			return {
-				isActive: false,
-				name: pluginId,
-				error: `Error checking plugin status: ${error}`,
-			};
+		if (plugin.instance) {
+			return plugin.enabled ?? false;
 		}
+
+		return false;
 	}
 }
