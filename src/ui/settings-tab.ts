@@ -56,7 +56,7 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		groupFormat.setHeading('Log Entry Format');
 
 		groupFormat.addSetting((setting) => {
-			const desc = new DocumentFragment()
+			const desc = new DocumentFragment();
 			const variablesList = desc.createEl('ul');
 			variablesList.createEl('li', {
 				text: '{entry} - The actual log entry text (required)',
@@ -101,20 +101,25 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 
 		groupPlacement.setHeading('Log Entry Placement');
 
-		groupPlacement.addSetting((setting) =>
+		groupPlacement.addSetting((setting) => {
+			const options = {
+				'#': 'Level 1 (#)',
+				'##': 'Level 2 (##)',
+				'###': 'Level 3 (###)',
+				'####': 'Level 4 (####)',
+			};
+
 			setting.setName('Heading Level')
 				.setDesc('The heading level to search for (e.g., ##, ###)')
 				.addDropdown(dropdown => dropdown
-					.addOption('#', 'Level 1 (#)')
-					.addOption('##', 'Level 2 (##)')
-					.addOption('###', 'Level 3 (###)')
-					.addOption('####', 'Level 4 (####)')
+					.addOptions(options)
 					.setValue(settings.sectionHeadingLevel)
 					.onChange(async (value) => {
 						await this.settingsService.updateSettings({ sectionHeadingLevel: value });
 						this.loggingService.updateOptions({ sectionHeadingLevel: value });
-					})),
-		);
+						this.display();
+					}));
+		});
 
 		// Heading text input
 		groupPlacement.addSetting((setting) =>
@@ -130,32 +135,46 @@ export class PersonalRestApiSettingTab extends PluginSettingTab {
 		);
 
 		// Fallback reference
-		groupPlacement.addSetting((setting) =>
-			setting.setName('Fallback Reference')
+		groupPlacement.addSetting((setting) => {
+			const options = {
+				'first-heading': `First ${settings.sectionHeadingLevel} heading`,
+				'last-heading': `Last ${settings.sectionHeadingLevel} heading`,
+				'file': 'File boundary (start or end)',
+			};
+
+			setting.setName('Insert Header Reference')
 				.setDesc('Where to create the heading if it doesn\'t exist')
 				.addDropdown(dropdown => dropdown
-					.addOption('first-heading', 'First heading of level')
-					.addOption('last-heading', 'Last heading of level')
-					.addOption('file', 'File boundary (start or end)')
+					.addOptions(options)
 					.setValue(settings.fallbackReference)
 					.onChange(async (value: FallbackReference) => {
 						await this.settingsService.updateSettings({ fallbackReference: value });
 						this.loggingService.updateOptions({ fallbackReference: value });
-					})),
-		);
+						this.display();
+					}));
+		});
 
 		// Fallback position
-		groupPlacement.addSetting((setting) =>
-			setting.setName('Fallback Position')
-				.setDesc('Whether to insert before or after the fallback reference')
+		groupPlacement.addSetting((setting) => {
+			const options = {
+				before: 'Before heading',
+				after: 'After heading',
+			};
+
+			if (settings.fallbackReference === 'file') {
+				options.before = 'Start of the file';
+				options.after = 'End of the file';
+			}
+
+			setting.setName('Insert Header Position')
+				.setDesc('Whether to insert before or after the above reference line')
 				.addDropdown(dropdown => dropdown
-					.addOption('before', 'Before')
-					.addOption('after', 'After')
+					.addOptions(options)
 					.setValue(settings.fallbackPosition)
 					.onChange(async (value: SectionPosition) => {
 						await this.settingsService.updateSettings({ fallbackPosition: value });
 						this.loggingService.updateOptions({ fallbackPosition: value });
-					})),
-		);
+					}));
+		});
 	}
 }
